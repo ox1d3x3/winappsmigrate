@@ -1,0 +1,83 @@
+<Window x:Class="AppMigrator.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AppMigrator MVP"
+        Height="760"
+        Width="1260"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="220" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Padding="14" CornerRadius="8" BorderBrush="#D0D0D0" BorderThickness="1" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Text="AppMigrator MVP" FontSize="24" FontWeight="SemiBold"/>
+                <TextBlock Margin="0,6,0,0" TextWrapping="Wrap"
+                           Text="Back up selected supported application state into one ZIP, then restore it on a fresh Windows install. This MVP is rule-based and honest about what it can restore well." />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Name="ScanButton" Width="150" Height="34" Margin="0,0,8,0" Click="ScanButton_Click">Scan Installed Apps</Button>
+                    <Button Name="SelectSupportedButton" Width="130" Height="34" Margin="0,0,8,0" Click="SelectSupportedButton_Click">Select Supported</Button>
+                    <Button Name="ClearSelectionButton" Width="100" Height="34" Margin="0,0,8,0" Click="ClearSelectionButton_Click">Clear</Button>
+                    <Button Name="BackupButton" Width="150" Height="34" Margin="0,0,8,0" Click="BackupButton_Click">Backup Selected</Button>
+                    <Button Name="RestoreButton" Width="150" Height="34" Margin="0,0,8,0" Click="RestoreButton_Click">Restore Backup ZIP</Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <CheckBox Name="UseWingetCheckBox" VerticalAlignment="Center" Margin="16,0,12,0"
+                              Content="Attempt WinGet reinstall on restore" />
+                    <TextBlock Name="SummaryTextBlock" VerticalAlignment="Center" FontWeight="SemiBold" />
+                </StackPanel>
+            </DockPanel>
+
+            <DataGrid Name="AppsDataGrid"
+                      Grid.Row="1"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="False"
+                      SelectionMode="Extended"
+                      GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column"
+                      RowHeaderWidth="0">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Pick" Binding="{Binding IsSelected, Mode=TwoWay}" Width="60"/>
+                    <DataGridTextColumn Header="App" Binding="{Binding DisplayName}" Width="250"/>
+                    <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="100"/>
+                    <DataGridTextColumn Header="Publisher" Binding="{Binding Publisher}" Width="180"/>
+                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120"/>
+                    <DataGridTextColumn Header="Strategy" Binding="{Binding RestoreStrategy}" Width="190"/>
+                    <DataGridCheckBoxColumn Header="Supported" Binding="{Binding Supported}" Width="85"/>
+                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence, StringFormat={}{0:F2}}" Width="90"/>
+                    <DataGridTextColumn Header="Install Location" Binding="{Binding InstallLocation}" Width="300"/>
+                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="300"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <GroupBox Grid.Row="2" Header="Log" Margin="0,12,0,12">
+            <TextBox Name="LogTextBox"
+                     Margin="8"
+                     IsReadOnly="True"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"/>
+        </GroupBox>
+
+        <TextBlock Grid.Row="3" Foreground="#666666" TextWrapping="Wrap"
+                   Text="Tip: browsers and editors should be closed during backup/restore. Complex apps with services, drivers, licensing, or Store packaging are not guaranteed to restore cleanly."/>
+    </Grid>
+</Window>
