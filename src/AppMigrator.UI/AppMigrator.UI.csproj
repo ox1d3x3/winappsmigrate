@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>AppMigrator.UI</AssemblyName>
     <RootNamespace>AppMigrator.UI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>

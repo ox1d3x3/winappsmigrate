@@ -97,3 +97,8 @@ AppMigrator/
 - Differential backups
 - Service/task recreation for selected supported apps
 - Stronger version compatibility checks
+
+
+## 2026-03-28 hotfix
+- Removed accidental Windows Forms project flag that caused `Application` type ambiguity during WPF build/publish.
+- Qualified `App` inheritance to `System.Windows.Application` for extra safety.
