@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Win Apps Migrator v0.0.13"
-        Width="1500"
-        Height="920"
+        Title="Win Apps Migrator v0.0.14"
+        Width="1440"
+        Height="860"
         MinWidth="1080"
-        MinHeight="760"
+        MinHeight="720"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource MaterialDesignWindow}"
         Background="{DynamicResource PageBackgroundBrush}"
@@ -47,20 +47,20 @@
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="26"/>
-            <Setter Property="Padding" Value="22"/>
+            <Setter Property="CornerRadius" Value="24"/>
+            <Setter Property="Padding" Value="18"/>
             <Setter Property="Effect" Value="{StaticResource PanelShadow}"/>
         </Style>
 
         <Style x:Key="HeroCardStyle" TargetType="Border" BasedOn="{StaticResource SurfaceCardStyle}">
             <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}"/>
-            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Padding" Value="18"/>
         </Style>
 
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="52"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
-            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Padding" Value="16,0"/>
             <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
@@ -74,7 +74,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="18"
+                                CornerRadius="16"
                                 Effect="{StaticResource CardShadow}">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
@@ -109,7 +109,7 @@
         </Style>
 
         <Style x:Key="SmallButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-            <Setter Property="Height" Value="46"/>
+            <Setter Property="Height" Value="42"/>
             <Setter Property="Margin" Value="0"/>
         </Style>
 
@@ -141,8 +141,8 @@
 
         <Style x:Key="ChipBorderStyle" TargetType="Border">
             <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Padding" Value="12,7"/>
-            <Setter Property="Margin" Value="0,0,10,10"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
         </Style>
 
@@ -150,21 +150,22 @@
             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="22"/>
-            <Setter Property="Padding" Value="16"/>
+            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="Padding" Value="14"/>
             <Setter Property="Margin" Value="0,0,0,0"/>
         </Style>
 
         <Style x:Key="TabHeaderStyle" TargetType="TabItem">
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
                         <Border x:Name="HeaderRoot"
-                                Margin="0,0,10,0"
-                                Padding="18,11"
-                                CornerRadius="16"
+                                Margin="0,0,8,0"
+                                Padding="14,8"
+                                CornerRadius="14"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="1">
@@ -188,7 +189,7 @@
         <Style x:Key="AppCardItemStyle" TargetType="ListBoxItem">
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="0,0,0,16"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -210,8 +211,8 @@
                 SnapsToDevicePixels="True">
             <Grid Margin="20">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="340"/>
-                    <ColumnDefinition Width="22"/>
+                    <ColumnDefinition Width="300"/>
+                    <ColumnDefinition Width="18"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
@@ -222,26 +223,26 @@
                         <Border Style="{StaticResource HeroCardStyle}" Margin="0,0,0,16">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="112"/>
+                                    <ColumnDefinition Width="96"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Width="96"
-                                        Height="96"
+                                <Border Width="82"
+                                        Height="82"
                                         Background="{DynamicResource SurfaceBrush}"
                                         BorderBrush="{DynamicResource StrokeBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="28"
-                                        Padding="10">
+                                        CornerRadius="18"
+                                        Padding="8">
                                     <Image Source="Assets/WinAppsMigrator_logo.png"
                                            Stretch="Uniform"
                                            SnapsToDevicePixels="True"
                                            RenderOptions.BitmapScalingMode="HighQuality"/>
                                 </Border>
 
-                                <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
                                     <TextBlock Text="Win Apps Migrator"
-                                               FontSize="27"
+                                               FontSize="22"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextStrongBrush}"/>
                                     <TextBlock Margin="0,6,0,0"
@@ -249,7 +250,7 @@
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                TextWrapping="Wrap"/>
                                     <TextBlock x:Name="VersionTextBlock"
-                                               Margin="0,14,0,0"
+                                               Margin="0,10,0,0"
                                                Foreground="{DynamicResource PrimaryContainerTextBrush}"
                                                FontWeight="SemiBold"/>
                                     <TextBlock x:Name="AuthorTextBlock"
@@ -270,8 +271,8 @@
                                         Background="{DynamicResource SurfaceAltBrush}"
                                         BorderBrush="{DynamicResource StrokeBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="18"
-                                        Padding="16">
+                                        CornerRadius="16"
+                                        Padding="14">
                                     <TextBlock x:Name="SummaryTextBlock"
                                                Foreground="{DynamicResource TextStrongBrush}"
                                                FontWeight="SemiBold"
@@ -370,58 +371,6 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource SurfaceCardStyle}" Margin="0,0,0,16">
-                            <DockPanel LastChildFill="False">
-                                <StackPanel DockPanel.Dock="Left" MaxWidth="220">
-                                    <TextBlock Text="Appearance" FontSize="18" FontWeight="SemiBold"/>
-                                    <TextBlock Margin="0,8,0,0"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               TextWrapping="Wrap"
-                                               Text="Single-icon toggle for light and dark mode."/>
-                                </StackPanel>
-
-                                <Button x:Name="ThemeToggleButton"
-                                        DockPanel.Dock="Right"
-                                        Width="56"
-                                        Height="56"
-                                        Margin="16,0,0,0"
-                                        Background="{DynamicResource SurfaceAccentBrush}"
-                                        BorderBrush="{DynamicResource StrokeStrongBrush}"
-                                        BorderThickness="1"
-                                        Cursor="Hand"
-                                        Click="ThemeToggleButton_Click">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="ToggleRoot"
-                                                    Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                                    CornerRadius="18"
-                                                    Effect="{StaticResource CardShadow}">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="ToggleRoot" Property="Opacity" Value="0.95"/>
-                                                </Trigger>
-                                                <Trigger Property="IsPressed" Value="True">
-                                                    <Setter TargetName="ToggleRoot" Property="Opacity" Value="0.88"/>
-                                                </Trigger>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter TargetName="ToggleRoot" Property="Opacity" Value="0.54"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                    <materialDesign:PackIcon x:Name="ThemeToggleIcon"
-                                                             Kind="WeatherNight"
-                                                             Width="24"
-                                                             Height="24"
-                                                             Foreground="{DynamicResource PrimaryContainerTextBrush}"/>
-                                </Button>
-                            </DockPanel>
-                        </Border>
-
                         <Border Style="{StaticResource SurfaceCardStyle}">
                             <StackPanel>
                                 <TextBlock Text="Resources" FontSize="18" FontWeight="SemiBold"/>
@@ -454,9 +403,9 @@
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="18"/>
+                        <RowDefinition Height="14"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="18"/>
+                        <RowDefinition Height="14"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -464,40 +413,83 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="16"/>
+                                <RowDefinition Height="14"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <StackPanel>
-                                <TextBlock Text="Library" FontSize="28" FontWeight="SemiBold"/>
-                                <TextBlock Margin="0,6,0,0"
-                                           Text="Scan what exists on this PC, search the catalog, and choose what to migrate."
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           TextWrapping="Wrap"/>
-                            </StackPanel>
-
-                            <Grid Grid.Row="2">
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="16"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0"
-                                        Background="{DynamicResource SurfaceAltBrush}"
+                                <StackPanel>
+                                    <TextBlock Text="Library" FontSize="26" FontWeight="SemiBold"/>
+                                    <TextBlock Margin="0,6,0,0"
+                                               Text="Scan what exists on this PC, search the catalog, and choose what to migrate."
+                                               Foreground="{DynamicResource TextMutedBrush}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <Button x:Name="ThemeToggleButton"
+                                        Grid.Column="1"
+                                        Width="50"
+                                        Height="50"
+                                        Margin="16,0,0,0"
+                                        Background="{DynamicResource SurfaceAccentBrush}"
+                                        BorderBrush="{DynamicResource StrokeStrongBrush}"
+                                        BorderThickness="1"
+                                        Cursor="Hand"
+                                        Click="ThemeToggleButton_Click">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="ToggleRoot"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="16"
+                                                    Effect="{StaticResource CardShadow}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ToggleRoot" Property="Opacity" Value="0.95"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="ToggleRoot" Property="Opacity" Value="0.88"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter TargetName="ToggleRoot" Property="Opacity" Value="0.54"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <materialDesign:PackIcon x:Name="ThemeToggleIcon"
+                                                             Kind="WeatherNight"
+                                                             Width="22"
+                                                             Height="22"
+                                                             Foreground="{DynamicResource PrimaryContainerTextBrush}"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Grid.Row="2">
+                                <Border Background="{DynamicResource SurfaceAltBrush}"
                                         BorderBrush="{DynamicResource StrokeBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="18"
-                                        Padding="14,0"
-                                        MinHeight="54">
+                                        CornerRadius="16"
+                                        Padding="12,0"
+                                        MinHeight="48"
+                                        Width="560"
+                                        MaxWidth="680"
+                                        HorizontalAlignment="Left">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="24"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <materialDesign:PackIcon Kind="Magnify"
-                                                                 Width="20"
-                                                                 Height="20"
+                                                                 Width="18"
+                                                                 Height="18"
                                                                  VerticalAlignment="Center"
                                                                  Foreground="{DynamicResource TextSoftBrush}"/>
                                         <TextBox Grid.Column="1"
@@ -509,16 +501,11 @@
                                 </Border>
 
                                 <Button x:Name="UpdateButtonTop"
-                                        Grid.Column="2"
-                                        Width="190"
-                                        Style="{StaticResource TonalButtonStyle}"
+                                        Visibility="Collapsed"
+                                        Width="0"
+                                        Height="0"
                                         Click="UpdateButton_Click"
-                                        Margin="0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Update" Width="18" Height="18" Margin="0,0,10,0"/>
-                                        <TextBlock Text="Check latest build"/>
-                                    </StackPanel>
-                                </Button>
+                                        Margin="0"/>
                             </Grid>
                         </Grid>
                     </Border>
@@ -527,26 +514,26 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="18"/>
+                                <RowDefinition Height="14"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="16"/>
-                                    <ColumnDefinition Width="200"/>
-                                    <ColumnDefinition Width="16"/>
-                                    <ColumnDefinition Width="240"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="170"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="210"/>
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel>
                                     <TextBlock x:Name="ProgressStageTextBlock"
                                                Text="Ready"
-                                               FontSize="20"
+                                               FontSize="18"
                                                FontWeight="SemiBold"/>
                                     <TextBlock x:Name="ProgressMessageTextBlock"
-                                               Margin="0,8,0,0"
+                                               Margin="0,6,0,0"
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                TextWrapping="Wrap"
                                                Text="Close selected apps before backup or restore for best results."/>
@@ -555,10 +542,11 @@
                                 <Border Grid.Column="2" Style="{StaticResource MetricTileStyle}">
                                     <StackPanel>
                                         <TextBlock Text="Current app"
-                                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                   FontSize="13"/>
                                         <TextBlock x:Name="CurrentAppTextBlock"
-                                                   Margin="0,8,0,0"
-                                                   FontSize="18"
+                                                   Margin="0,6,0,0"
+                                                   FontSize="16"
                                                    FontWeight="SemiBold"
                                                    Text="—"
                                                    TextWrapping="Wrap"/>
@@ -568,14 +556,15 @@
                                 <Border Grid.Column="4" Style="{StaticResource MetricTileStyle}">
                                     <StackPanel>
                                         <TextBlock Text="Transfer"
-                                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                   FontSize="13"/>
                                         <TextBlock x:Name="TransferStatsTextBlock"
-                                                   Margin="0,8,0,0"
-                                                   FontSize="18"
+                                                   Margin="0,6,0,0"
+                                                   FontSize="16"
                                                    FontWeight="SemiBold"
                                                    Text="0 MB / 0 MB"/>
                                         <TextBlock x:Name="EtaTextBlock"
-                                                   Margin="0,8,0,0"
+                                                   Margin="0,6,0,0"
                                                    Foreground="{DynamicResource TextMutedBrush}"
                                                    Text="ETA: --"
                                                    TextWrapping="Wrap"/>
@@ -584,20 +573,19 @@
                             </Grid>
 
                             <Border Grid.Row="2"
-                                    Background="{DynamicResource SurfaceAltBrush}"
+                                    Background="{DynamicResource PrimaryContainerBrush}"
                                     BorderBrush="{DynamicResource StrokeBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="16"
-                                    Padding="4">
-                                <Grid>
-                                    <ProgressBar x:Name="OperationProgressBar"
-                                                 Height="12"
-                                                 Minimum="0"
-                                                 Maximum="100"
-                                                 BorderThickness="0"
-                                                 Background="Transparent"
-                                                 Foreground="{DynamicResource PrimaryBrush}"/>
-                                </Grid>
+                                    CornerRadius="999"
+                                    Padding="3">
+                                <ProgressBar x:Name="OperationProgressBar"
+                                             Style="{DynamicResource MaterialDesignLinearProgressBar}"
+                                             Height="8"
+                                             Minimum="0"
+                                             Maximum="100"
+                                             BorderThickness="0"
+                                             Background="Transparent"
+                                             Foreground="{DynamicResource PrimaryBrush}"/>
                             </Border>
                         </Grid>
                     </Border>
@@ -619,12 +607,12 @@
                                     <Border Background="{DynamicResource SurfaceAltBrush}"
                                             BorderBrush="{DynamicResource StrokeBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="22"
-                                            Padding="18"
-                                            Margin="0,0,0,16">
+                                            CornerRadius="18"
+                                            Padding="14"
+                                            Margin="0,0,0,12">
                                         <StackPanel>
                                             <TextBlock Text="App selection"
-                                                       FontSize="18"
+                                                       FontSize="17"
                                                        FontWeight="SemiBold"/>
                                             <TextBlock Margin="0,8,0,0"
                                                        Foreground="{DynamicResource TextMutedBrush}"
@@ -650,49 +638,49 @@
                                                         Background="{DynamicResource SurfaceRaisedBrush}"
                                                         BorderBrush="{DynamicResource StrokeBrush}"
                                                         BorderThickness="1"
-                                                        CornerRadius="26"
-                                                        Padding="22"
+                                                        CornerRadius="18"
+                                                        Padding="18"
                                                         Effect="{StaticResource CardShadow}"
                                                         PreviewMouseLeftButtonUp="AppCard_PreviewMouseLeftButtonUp">
                                                     <Grid>
                                                         <Grid.RowDefinitions>
                                                             <RowDefinition Height="Auto"/>
-                                                            <RowDefinition Height="18"/>
+                                                            <RowDefinition Height="14"/>
                                                             <RowDefinition Height="Auto"/>
                                                         </Grid.RowDefinitions>
 
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="80"/>
+                                                                <ColumnDefinition Width="68"/>
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
 
-                                                            <Border Width="72"
-                                                                    Height="72"
-                                                                    CornerRadius="22"
+                                                            <Border Width="58"
+                                                                    Height="58"
+                                                                    CornerRadius="18"
                                                                     Background="{DynamicResource SurfaceAccentBrush}"
                                                                     BorderBrush="{DynamicResource StrokeBrush}"
                                                                     BorderThickness="1"
                                                                     VerticalAlignment="Top">
                                                                 <TextBlock Text="{Binding BadgeText}"
-                                                                           FontSize="23"
+                                                                           FontSize="18"
                                                                            FontWeight="SemiBold"
                                                                            HorizontalAlignment="Center"
                                                                            VerticalAlignment="Center"
                                                                            Foreground="{DynamicResource PrimaryBrush}"/>
                                                             </Border>
 
-                                                            <StackPanel Grid.Column="1" Margin="18,0,18,0">
+                                                            <StackPanel Grid.Column="1" Margin="14,0,14,0">
                                                                 <TextBlock Text="{Binding DisplayName}"
-                                                                           FontSize="20"
+                                                                           FontSize="18"
                                                                            FontWeight="SemiBold"
                                                                            TextWrapping="Wrap"/>
                                                                 <TextBlock Margin="0,5,0,0"
                                                                            Text="{Binding Publisher}"
                                                                            Foreground="{DynamicResource TextMutedBrush}"
                                                                            TextWrapping="Wrap"/>
-                                                                <WrapPanel Margin="0,16,0,0">
+                                                                <WrapPanel Margin="0,12,0,0">
                                                                     <Border>
                                                                         <Border.Style>
                                                                             <Style TargetType="Border" BasedOn="{StaticResource ChipBorderStyle}">
@@ -759,8 +747,8 @@
                                                                     Background="{DynamicResource PrimaryContainerBrush}"
                                                                     BorderBrush="{DynamicResource StrokeStrongBrush}"
                                                                     BorderThickness="1"
-                                                                    CornerRadius="15"
-                                                                    Padding="12,9"
+                                                                    CornerRadius="13"
+                                                                    Padding="10,7"
                                                                     Visibility="Collapsed"
                                                                     VerticalAlignment="Top">
                                                                 <StackPanel Orientation="Horizontal">
@@ -775,7 +763,7 @@
 
                                                         <WrapPanel Grid.Row="2">
                                                             <Border Style="{StaticResource MetricTileStyle}"
-                                                                    Width="220"
+                                                                    Width="180"
                                                                     Margin="0,0,12,12">
                                                                 <StackPanel>
                                                                     <TextBlock Text="Version"
@@ -788,7 +776,7 @@
                                                             </Border>
 
                                                             <Border Style="{StaticResource MetricTileStyle}"
-                                                                    Width="220"
+                                                                    Width="180"
                                                                     Margin="0,0,12,12">
                                                                 <StackPanel>
                                                                     <TextBlock Text="Rule"
@@ -801,7 +789,7 @@
                                                             </Border>
 
                                                             <Border Style="{StaticResource MetricTileStyle}"
-                                                                    Width="220"
+                                                                    Width="180"
                                                                     Margin="0,0,12,12">
                                                                 <StackPanel>
                                                                     <TextBlock Text="Publisher"
@@ -814,7 +802,7 @@
                                                             </Border>
 
                                                             <Border Style="{StaticResource MetricTileStyle}"
-                                                                    Width="220"
+                                                                    Width="180"
                                                                     Margin="0,0,12,12">
                                                                 <StackPanel>
                                                                     <TextBlock Text="Package ID"
@@ -856,7 +844,7 @@
                                     <Border Background="{DynamicResource SurfaceAltBrush}"
                                             BorderBrush="{DynamicResource StrokeBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="22"
+                                            CornerRadius="18"
                                             Padding="18"
                                             Margin="0,0,0,16">
                                         <StackPanel>
