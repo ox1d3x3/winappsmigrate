@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Threading;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
 using MaterialDesignThemes.Wpf;
@@ -30,6 +31,7 @@ public partial class MainWindow : Window
     private long _lastProgressBytes;
     private bool _themeLoaded;
     private string _currentTheme = "Light";
+    private readonly ICollectionView _appsView;
 
     public MainWindow()
     {
@@ -41,7 +43,10 @@ public partial class MainWindow : Window
         AuthorTextBlock.Text = $"Author: {AppMetadata.Author}";
         ProjectButton.IsEnabled = !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
         AppsDataGrid.ItemsSource = _apps;
-        CollectionViewSource.GetDefaultView(AppsDataGrid.ItemsSource).Filter = AppFilter;
+        _appsView = CollectionViewSource.GetDefaultView(AppsDataGrid.ItemsSource);
+        _appsView.Filter = AppFilter;
+        _appsView.SortDescriptions.Add(new SortDescription(nameof(DiscoveredApp.Supported), ListSortDirection.Descending));
+        _appsView.SortDescriptions.Add(new SortDescription(nameof(DiscoveredApp.DisplayName), ListSortDirection.Ascending));
         Loaded += MainWindow_Loaded;
 
         ApplyTheme("Light");
@@ -81,6 +86,9 @@ public partial class MainWindow : Window
                || app.Category.Contains(search, StringComparison.OrdinalIgnoreCase)
                || app.RuleId.Contains(search, StringComparison.OrdinalIgnoreCase)
                || app.RestoreStrategy.Contains(search, StringComparison.OrdinalIgnoreCase)
+               || app.Version.Contains(search, StringComparison.OrdinalIgnoreCase)
+               || app.InstallLocation.Contains(search, StringComparison.OrdinalIgnoreCase)
+               || (app.WingetId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
                || app.Notes.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -89,6 +97,12 @@ public partial class MainWindow : Window
         try
         {
             SetBusyState(true);
+
+            foreach (var existingApp in _apps)
+            {
+                existingApp.PropertyChanged -= App_PropertyChanged;
+            }
+
             _apps.Clear();
             Log("Scanning installed applications...");
 
@@ -305,7 +319,7 @@ public partial class MainWindow : Window
 
     private void RefreshFilter()
     {
-        CollectionViewSource.GetDefaultView(AppsDataGrid.ItemsSource)?.Refresh();
+        _appsView.Refresh();
         UpdateSummary();
     }
 
@@ -416,7 +430,7 @@ public partial class MainWindow : Window
 
         Background = (System.Windows.Media.Brush)Resources["PageBackgroundBrush"];
         LogTextBox.CaretBrush = (System.Windows.Media.Brush)Resources["TextStrongBrush"];
-        ThemeToggleIcon.Kind = dark ? PackIconKind.WhiteBalanceSunny : PackIconKind.WeatherNight;
+        ThemeToggleIcon.Kind = dark ? PackIconKind.WeatherSunny : PackIconKind.WeatherNight;
         ThemeToggleButton.ToolTip = dark ? "Switch to light theme" : "Switch to dark theme";
     }
 
@@ -434,37 +448,43 @@ public partial class MainWindow : Window
         UpdateButtonTop.IsEnabled = !isBusy;
         ProjectButton.IsEnabled = !isBusy && !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
         ThemeToggleButton.IsEnabled = !isBusy;
+        SearchTextBox.IsEnabled = !isBusy;
+        SupportedOnlyCheckBox.IsEnabled = !isBusy;
+        UseWingetCheckBox.IsEnabled = !isBusy;
         AppsDataGrid.IsEnabled = !isBusy;
         Mouse.OverrideCursor = isBusy ? Cursors.Wait : null;
     }
 
     private void HandleProgress(MigrationProgressInfo info)
     {
-        Dispatcher.Invoke(() =>
+        if (!Dispatcher.CheckAccess())
         {
-            OperationProgressBar.Value = info.Percent;
-            ProgressStageTextBlock.Text = string.IsNullOrWhiteSpace(info.Stage) ? "Working" : info.Stage;
-            ProgressMessageTextBlock.Text = info.Message;
-            CurrentAppTextBlock.Text = string.IsNullOrWhiteSpace(info.CurrentApp) ? "—" : info.CurrentApp;
+            Dispatcher.Invoke(() => HandleProgress(info), DispatcherPriority.Background);
+            return;
+        }
 
-            var now = DateTime.UtcNow;
-            var deltaBytes = Math.Max(0, info.ProcessedBytes - _lastProgressBytes);
-            var deltaSeconds = Math.Max((now - _lastProgressStamp).TotalSeconds, 0.25d);
-            var bytesPerSecond = deltaBytes / deltaSeconds;
-            _lastProgressStamp = now;
-            _lastProgressBytes = info.ProcessedBytes;
+        OperationProgressBar.Value = info.Percent;
+        ProgressStageTextBlock.Text = string.IsNullOrWhiteSpace(info.Stage) ? "Working" : info.Stage;
+        ProgressMessageTextBlock.Text = info.Message;
+        CurrentAppTextBlock.Text = string.IsNullOrWhiteSpace(info.CurrentApp) ? "—" : info.CurrentApp;
 
-            TransferStatsTextBlock.Text = $"{FormatBytes(info.ProcessedBytes)} / {FormatBytes(info.TotalBytes)}";
-            if (bytesPerSecond > 0 && info.TotalBytes > info.ProcessedBytes)
-            {
-                var etaSeconds = (info.TotalBytes - info.ProcessedBytes) / bytesPerSecond;
-                EtaTextBlock.Text = $"ETA: {TimeSpan.FromSeconds(etaSeconds):mm\\:ss}  •  {FormatBytes((long)bytesPerSecond)}/s";
-            }
-            else
-            {
-                EtaTextBlock.Text = "ETA: --";
-            }
-        });
+        var now = DateTime.UtcNow;
+        var deltaBytes = Math.Max(0, info.ProcessedBytes - _lastProgressBytes);
+        var deltaSeconds = Math.Max((now - _lastProgressStamp).TotalSeconds, 0.25d);
+        var bytesPerSecond = deltaBytes / deltaSeconds;
+        _lastProgressStamp = now;
+        _lastProgressBytes = info.ProcessedBytes;
+
+        TransferStatsTextBlock.Text = $"{FormatBytes(info.ProcessedBytes)} / {FormatBytes(info.TotalBytes)}";
+        if (bytesPerSecond > 0 && info.TotalBytes > info.ProcessedBytes)
+        {
+            var etaSeconds = (info.TotalBytes - info.ProcessedBytes) / bytesPerSecond;
+            EtaTextBlock.Text = $"ETA: {TimeSpan.FromSeconds(etaSeconds):mm\\:ss}  •  {FormatBytes((long)bytesPerSecond)}/s";
+        }
+        else
+        {
+            EtaTextBlock.Text = "ETA: --";
+        }
     }
 
     private void ResetProgress()
@@ -481,18 +501,21 @@ public partial class MainWindow : Window
 
     private void Log(string message)
     {
-        Dispatcher.Invoke(() =>
+        if (!Dispatcher.CheckAccess())
         {
-            LogTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
-            LogTextBox.ScrollToEnd();
-        });
+            Dispatcher.Invoke(() => Log(message), DispatcherPriority.Background);
+            return;
+        }
+
+        LogTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+        LogTextBox.ScrollToEnd();
     }
 
     private void UpdateSummary()
     {
         var selectedCount = _apps.Count(app => app.IsSelected);
         var supportedCount = _apps.Count(app => app.Supported);
-        var visibleCount = CollectionViewSource.GetDefaultView(AppsDataGrid.ItemsSource)?.Cast<object>().Count() ?? _apps.Count;
+        var visibleCount = _appsView.Cast<object>().Count();
         SummaryTextBlock.Text = $"Visible: {visibleCount}   Found: {_apps.Count}   Supported: {supportedCount}   Selected: {selectedCount}";
     }
 

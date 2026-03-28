@@ -11,16 +11,17 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\WinAppsMigrator.ico</ApplicationIcon>
     <Product>Win Apps Migrator</Product>
-    <Version>0.0.11</Version>
-    <FileVersion>0.0.11.0</FileVersion>
-    <AssemblyVersion>0.0.11.0</AssemblyVersion>
-    <InformationalVersion>0.0.11</InformationalVersion>
+    <Version>0.0.12</Version>
+    <FileVersion>0.0.12.0</FileVersion>
+    <AssemblyVersion>0.0.12.0</AssemblyVersion>
+    <InformationalVersion>0.0.12</InformationalVersion>
     <Authors>Ox1d3x3</Authors>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="rules\*.rule.json" CopyToOutputDirectory="PreserveNewest" />
     <Resource Include="Assets\WinAppsMigrator.ico" />
+    <Resource Include="Assets\WinAppsMigrator_logo.png" />
   </ItemGroup>
 
   <ItemGroup>
