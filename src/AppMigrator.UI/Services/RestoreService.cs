@@ -182,6 +182,11 @@ public sealed class RestoreService
         }
 
         string? packageId = app.WingetId;
+        if (string.IsNullOrWhiteSpace(packageId) && !string.IsNullOrWhiteSpace(app.AppId))
+        {
+            packageId = _ruleRepository.GetById(app.AppId)?.WingetId;
+        }
+
         if (string.IsNullOrWhiteSpace(packageId))
         {
             log?.Report($"Searching WinGet for {app.DisplayName}...");
@@ -205,6 +210,9 @@ public sealed class RestoreService
         if (install.Succeeded)
         {
             log?.Report($"WinGet install completed for {app.DisplayName}");
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            installedApps.Clear();
+            installedApps.AddRange(await new AppDiscoveryService(_ruleRepository).DiscoverAsync());
             return;
         }
 
@@ -220,6 +228,12 @@ public sealed class RestoreService
             if (!string.IsNullOrWhiteSpace(app.WingetId)
                 && !string.IsNullOrWhiteSpace(installed.WingetId)
                 && string.Equals(app.WingetId, installed.WingetId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(app.AppId)
+                && string.Equals(installed.RuleId, app.AppId, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

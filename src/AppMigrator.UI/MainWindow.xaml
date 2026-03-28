@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Win Apps Migrator V0.0.5"
+        Title="Win Apps Migrator V0.0.7"
         Height="930"
         Width="1560"
         MinHeight="840"
@@ -97,6 +97,54 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Focusable" Value="False"/>
         </Style>
+
+        <Style x:Key="ModernTabItemStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder" Background="#F8FAFD" BorderBrush="#E7ECF2" BorderThickness="1" CornerRadius="14,14,0,0" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" ContentSource="Header"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="White"/>
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="#D9E5FF"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextStrongBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#FBFDFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernTabControlStyle" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid KeyboardNavigation.TabNavigation="Local">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TabPanel Grid.Row="0" Margin="0,0,0,14" IsItemsHost="True" Background="Transparent"/>
+                            <Border Grid.Row="1" Background="Transparent">
+                                <ContentPresenter ContentSource="SelectedContent"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
     <Grid Margin="18">
@@ -249,7 +297,10 @@
             </Border>
 
             <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="0,18,0,0">
-                <TabControl Background="Transparent" BorderThickness="0">
+                <TabControl Style="{StaticResource ModernTabControlStyle}">
+                    <TabControl.Resources>
+                        <Style TargetType="TabItem" BasedOn="{StaticResource ModernTabItemStyle}"/>
+                    </TabControl.Resources>
                     <TabItem Header="Apps">
                         <Grid Margin="0,14,0,0">
                             <Grid.RowDefinitions>
@@ -262,9 +313,9 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Click anywhere on a card to select or unselect it. Each card shows support, confidence, restore method, and install details." Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Click anywhere on a card to include or remove it. Each card shows support status, confidence, restore method, and install details." Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                                     <Border Grid.Column="1" Background="#EEF4FF" CornerRadius="14" Padding="12,8" Margin="14,0,0,0">
-                                        <TextBlock Foreground="#3359B8" FontWeight="SemiBold" Text="Card click = selection"/>
+                                        <TextBlock Foreground="#3359B8" FontWeight="SemiBold" Text="Card click enabled"/>
                                     </Border>
                                 </Grid>
                             </Border>
@@ -300,57 +351,60 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <StackPanel>
-                                                    <Border Width="74" Height="74" CornerRadius="24" VerticalAlignment="Top">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Background" Value="#EAF2FF"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Supported}" Value="True">
-                                                                        <Setter Property="Background" Value="#DFF7EA"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                        <TextBlock Text="{Binding BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" FontWeight="SemiBold">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Foreground" Value="#245BC7"/>
+                                                    <Grid Width="82" Height="82" HorizontalAlignment="Left">
+                                                        <Border CornerRadius="24" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="#EAF2FF"/>
                                                                     <Style.Triggers>
                                                                         <DataTrigger Binding="{Binding Supported}" Value="True">
-                                                                            <Setter Property="Foreground" Value="#117A4A"/>
+                                                                            <Setter Property="Background" Value="#DFF7EA"/>
                                                                         </DataTrigger>
                                                                     </Style.Triggers>
                                                                 </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
-                                                    </Border>
+                                                            </Border.Style>
+                                                            <TextBlock Text="{Binding BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="24" FontWeight="SemiBold">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="#245BC7"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Supported}" Value="True">
+                                                                                <Setter Property="Foreground" Value="#117A4A"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </Border>
+                                                        <Border Width="28" Height="28" CornerRadius="14" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-6,0" Background="#1F6BFF" BorderBrush="White" BorderThickness="3">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="✓" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                                                        </Border>
+                                                    </Grid>
 
-                                                    <Border Margin="0,14,0,0" CornerRadius="999" Padding="10,6" HorizontalAlignment="Left">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Background" Value="#EEF2F7"/>
+                                                    <TextBlock Margin="0,14,0,0" FontWeight="SemiBold" FontSize="12">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="Click card to include"/>
+                                                                <Setter Property="Foreground" Value="#667085"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                        <Setter Property="Background" Value="#1F6BFF"/>
+                                                                        <Setter Property="Text" Value="Included in job"/>
+                                                                        <Setter Property="Foreground" Value="#117A4A"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
-                                                        </Border.Style>
-                                                        <TextBlock FontWeight="SemiBold">
-                                                            <TextBlock.Style>
-                                                                <Style TargetType="TextBlock">
-                                                                    <Setter Property="Text" Value="Click to select"/>
-                                                                    <Setter Property="Foreground" Value="#344054"/>
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                            <Setter Property="Text" Value="Selected"/>
-                                                                            <Setter Property="Foreground" Value="White"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </TextBlock.Style>
-                                                        </TextBlock>
-                                                    </Border>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Column="1" Margin="18,0,18,0">

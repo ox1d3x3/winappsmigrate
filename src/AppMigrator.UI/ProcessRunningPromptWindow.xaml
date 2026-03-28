@@ -2,17 +2,53 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Close running app"
-        Height="380"
-        Width="600"
-        MinHeight="380"
-        MinWidth="600"
+        Width="680"
+        Height="470"
+        MinWidth="680"
+        MinHeight="470"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#F3F5F9"
         WindowStyle="SingleBorderWindow"
         ShowInTaskbar="False">
+    <Window.Resources>
+        <DropShadowEffect x:Key="PromptShadow" BlurRadius="20" ShadowDepth="0" Opacity="0.08"/>
+        <Style x:Key="PromptPrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#1F6BFF"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" CornerRadius="14">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.93"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.84"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PromptSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PromptPrimaryButtonStyle}">
+            <Setter Property="Foreground" Value="#0F172A"/>
+            <Setter Property="Background" Value="#EEF2F7"/>
+        </Style>
+    </Window.Resources>
+
     <Grid Margin="18">
-        <Border CornerRadius="28" Background="White" BorderBrush="#E6EBF2" BorderThickness="1" Padding="24">
+        <Border CornerRadius="28" Background="White" BorderBrush="#E6EBF2" BorderThickness="1" Padding="24" Effect="{StaticResource PromptShadow}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -33,7 +69,7 @@
                     </Border>
                     <StackPanel Grid.Column="1" Margin="14,0,0,0">
                         <TextBlock Name="TitleTextBlock" FontSize="27" FontWeight="SemiBold" Foreground="#0F172A" TextWrapping="Wrap"/>
-                        <TextBlock Margin="0,8,0,0" Foreground="#667085" Text="Close the app, then continue. If nothing is pressed before the timer ends, this app will be skipped automatically." TextWrapping="Wrap"/>
+                        <TextBlock Margin="0,8,0,0" Foreground="#667085" Text="Close the app, then choose how to continue. If nothing is pressed before the timer ends, this app will be skipped automatically." TextWrapping="Wrap"/>
                     </StackPanel>
                 </Grid>
 
@@ -57,9 +93,9 @@
                 </Border>
 
                 <StackPanel Grid.Row="5" Margin="0,24,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="RetryButton" Width="154" Height="46" Margin="0,0,10,0" Click="RetryButton_Click" Background="#1F6BFF" Foreground="White" BorderThickness="0" FontWeight="SemiBold">Continue after close</Button>
-                    <Button Name="SkipButton" Width="106" Height="46" Margin="0,0,10,0" Click="SkipButton_Click" Background="#EEF2F7" Foreground="#0F172A" BorderThickness="0" FontWeight="SemiBold">Skip app</Button>
-                    <Button Name="CancelButtonEx" Width="106" Height="46" Click="CancelButtonEx_Click" Background="#EEF2F7" Foreground="#0F172A" BorderThickness="0" FontWeight="SemiBold">Cancel job</Button>
+                    <Button Name="RetryButton" Width="180" Style="{StaticResource PromptPrimaryButtonStyle}" Click="RetryButton_Click">Continue after close</Button>
+                    <Button Name="SkipButton" Width="110" Style="{StaticResource PromptSecondaryButtonStyle}" Click="SkipButton_Click">Skip app</Button>
+                    <Button Name="CancelButtonEx" Width="110" Margin="0" Style="{StaticResource PromptSecondaryButtonStyle}" Click="CancelButtonEx_Click">Cancel job</Button>
                 </StackPanel>
             </Grid>
         </Border>
