@@ -1,8 +1,8 @@
-# Win Apps Migrator V0.0.5
+# Win Apps Migrator V0.0.6
 
 This package contains the WPF/.NET 8 Windows prototype for Win Apps Migrator.
 
-## Highlights in V0.0.5
+## Highlights in V0.0.6
 - cleaner card-based desktop UI with click-anywhere app selection
 - improved running-app prompt with visible continue, skip, and cancel actions
 - restore flow now prefers WinGet's `winget` source directly to avoid `msstore` source issues
