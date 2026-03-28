@@ -1,5 +1,8 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
 using Microsoft.Win32;
@@ -180,7 +183,7 @@ public partial class MainWindow : Window
         BackupButton.IsEnabled = !isBusy;
         RestoreButton.IsEnabled = !isBusy;
         AppsDataGrid.IsEnabled = !isBusy;
-        Mouse.OverrideCursor = isBusy ? System.Windows.Input.Cursors.Wait : null;
+        System.Windows.Input.Mouse.OverrideCursor = isBusy ? System.Windows.Input.Cursors.Wait : null;
     }
 
     private void Log(string message)

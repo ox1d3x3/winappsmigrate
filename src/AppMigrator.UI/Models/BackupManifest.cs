@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace AppMigrator.UI.Models;
 
 public sealed class BackupManifest

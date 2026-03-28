@@ -102,3 +102,7 @@ AppMigrator/
 ## 2026-03-28 hotfix
 - Removed accidental Windows Forms project flag that caused `Application` type ambiguity during WPF build/publish.
 - Qualified `App` inheritance to `System.Windows.Application` for extra safety.
+
+
+## Important
+Always extract this ZIP to a **fresh folder** before opening in Visual Studio. Do not overwrite an older broken extraction, because stale `bin` / `obj` files or partially overwritten source files can cause misleading compile errors.
