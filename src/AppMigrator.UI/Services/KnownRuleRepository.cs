@@ -44,16 +44,19 @@ public sealed class KnownRuleRepository
     private static double ScoreRule(AppRule rule, string displayName, string publisher, string installLocation)
     {
         var score = 0d;
+        var identityHits = 0;
 
         foreach (var candidate in rule.MatchDisplayNames.Where(x => !string.IsNullOrWhiteSpace(x)))
         {
             if (string.Equals(displayName, candidate, StringComparison.OrdinalIgnoreCase))
             {
                 score += 12d;
+                identityHits += 3;
             }
             else if (displayName.Contains(candidate, StringComparison.OrdinalIgnoreCase))
             {
                 score += 6d;
+                identityHits += 2;
             }
         }
 
@@ -62,14 +65,7 @@ public sealed class KnownRuleRepository
             if (!string.IsNullOrWhiteSpace(displayName) && displayName.Contains(token, StringComparison.OrdinalIgnoreCase))
             {
                 score += 3.5d;
-            }
-        }
-
-        foreach (var token in rule.MatchPublisherTokens.Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            if (!string.IsNullOrWhiteSpace(publisher) && publisher.Contains(token, StringComparison.OrdinalIgnoreCase))
-            {
-                score += 2.5d;
+                identityHits++;
             }
         }
 
@@ -77,11 +73,20 @@ public sealed class KnownRuleRepository
         {
             if (!string.IsNullOrWhiteSpace(installLocation) && installLocation.Contains(token, StringComparison.OrdinalIgnoreCase))
             {
-                score += 1.5d;
+                score += 2.25d;
+                identityHits++;
             }
         }
 
-        return score;
+        foreach (var token in rule.MatchPublisherTokens.Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!string.IsNullOrWhiteSpace(publisher) && publisher.Contains(token, StringComparison.OrdinalIgnoreCase))
+            {
+                score += 1.25d;
+            }
+        }
+
+        return identityHits == 0 ? 0d : score;
     }
 
     private static IEnumerable<AppRule> LoadExternalRules()

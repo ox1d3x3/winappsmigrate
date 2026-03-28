@@ -4,8 +4,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -24,22 +24,37 @@ public partial class MainWindow : Window
     private readonly WinGetService _winGetService = new();
     private readonly ProcessMonitorService _processMonitorService;
     private readonly UpdateService _updateService = new();
+    private readonly UserSettingsService _userSettingsService = new();
     private DateTime _lastProgressStamp = DateTime.UtcNow;
     private long _lastProgressBytes;
+    private bool _themeLoaded;
 
     public MainWindow()
     {
         _processMonitorService = new ProcessMonitorService(_ruleRepository);
         InitializeComponent();
+
         Title = AppMetadata.DisplayTitle;
         VersionTextBlock.Text = $"Version V{AppMetadata.Version}";
         AuthorTextBlock.Text = $"Author: {AppMetadata.Author}";
         ProjectButton.IsEnabled = !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
         AppsDataGrid.ItemsSource = _apps;
         CollectionViewSource.GetDefaultView(AppsDataGrid.ItemsSource).Filter = AppFilter;
+        ThemeComboBox.SelectedIndex = 0;
+        Loaded += MainWindow_Loaded;
+
         UpdateSummary();
         Log($"{AppMetadata.DisplayTitle} ready.");
         Log("Use Scan Installed Apps to classify what can be migrated cleanly.");
+    }
+
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        var settings = await _userSettingsService.LoadAsync();
+        var desiredTheme = string.Equals(settings.Theme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Dark" : "Light";
+        ThemeComboBox.SelectedIndex = string.Equals(desiredTheme, "Dark", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        ApplyTheme(desiredTheme);
+        _themeLoaded = true;
     }
 
     private bool AppFilter(object item)
@@ -62,7 +77,8 @@ public partial class MainWindow : Window
 
         return app.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)
                || app.Publisher.Contains(search, StringComparison.OrdinalIgnoreCase)
-               || app.Category.Contains(search, StringComparison.OrdinalIgnoreCase);
+               || app.Category.Contains(search, StringComparison.OrdinalIgnoreCase)
+               || app.RuleId.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 
     private async void ScanButton_Click(object sender, RoutedEventArgs e)
@@ -198,7 +214,7 @@ public partial class MainWindow : Window
         }
 
         var restoreMessage = UseWingetCheckBox.IsChecked == true
-            ? "Restore from the selected ZIP and attempt WinGet reinstall where package IDs are known?"
+            ? "Restore from the selected ZIP and install missing apps with WinGet when possible?"
             : "Restore from the selected ZIP?";
 
         var confirm = MessageBox.Show(this, restoreMessage, "Confirm restore", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -246,6 +262,7 @@ public partial class MainWindow : Window
             while (running.Count > 0)
             {
                 var prompt = new ProcessRunningPromptWindow(app.DisplayName, string.Join(", ", running), 60) { Owner = this };
+                prompt.ApplyTheme(GetSelectedTheme());
                 prompt.ShowDialog();
 
                 if (prompt.CancelJob)
@@ -279,11 +296,9 @@ public partial class MainWindow : Window
         return (false, ready);
     }
 
-    private void SearchTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        => RefreshFilter();
+    private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshFilter();
 
-    private void FilterChanged(object sender, RoutedEventArgs e)
-        => RefreshFilter();
+    private void FilterChanged(object sender, RoutedEventArgs e) => RefreshFilter();
 
     private void RefreshFilter()
     {
@@ -298,7 +313,7 @@ public partial class MainWindow : Window
         {
             var result = await _updateService.CheckForUpdateAsync();
             Log(result.Message);
-            MessageBox.Show(this, result.Message, "Update check", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, result.Message, "Latest build", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         finally
         {
@@ -306,7 +321,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AppCard_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void AppCard_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement card || card.DataContext is not DiscoveredApp app)
         {
@@ -318,7 +333,7 @@ public partial class MainWindow : Window
             var current = element;
             while (current is not null)
             {
-                if (current is Button || current is TextBox || current is ScrollBar)
+                if (current is Button || current is TextBox || current is ScrollBar || current is ComboBox || current is CheckBox)
                 {
                     return;
                 }
@@ -347,6 +362,49 @@ public partial class MainWindow : Window
         });
     }
 
+    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ThemeComboBox.SelectedItem is ComboBoxItem item)
+        {
+            var themeName = item.Content?.ToString() ?? "Light";
+            ApplyTheme(themeName);
+            if (_themeLoaded)
+            {
+                _ = _userSettingsService.SaveAsync(new UserSettings { Theme = themeName });
+            }
+        }
+    }
+
+    private string GetSelectedTheme()
+        => ThemeComboBox.SelectedItem is ComboBoxItem item ? item.Content?.ToString() ?? "Light" : "Light";
+
+    private void ApplyTheme(string themeName)
+    {
+        var dark = string.Equals(themeName, "Dark", StringComparison.OrdinalIgnoreCase);
+
+        SetBrush("PageBackgroundBrush", dark ? "#0B1120" : "#F4F6FB");
+        SetBrush("SidebarBrush", dark ? "#101827" : "#FAFBFF");
+        SetBrush("SurfaceBrush", dark ? "#101828" : "#FFFFFF");
+        SetBrush("SurfaceRaisedBrush", dark ? "#111B2E" : "#FFFFFF");
+        SetBrush("AccentSurfaceBrush", dark ? "#13203A" : "#F3F7FF");
+        SetBrush("SoftSurfaceBrush", dark ? "#162236" : "#F8FAFD");
+        SetBrush("StrokeBrush", dark ? "#243247" : "#DFE6F0");
+        SetBrush("PrimaryBrush", dark ? "#7AA2FF" : "#2E6BFF");
+        SetBrush("PrimarySoftBrush", dark ? "#1C2A46" : "#EAF1FF");
+        SetBrush("SuccessBrush", dark ? "#5ED5A1" : "#157A52");
+        SetBrush("WarningBrush", dark ? "#F7B267" : "#B45309");
+        SetBrush("TextStrongBrush", dark ? "#F8FAFC" : "#101828");
+        SetBrush("TextMutedBrush", dark ? "#B3C1D9" : "#667085");
+        SetBrush("TextSoftBrush", dark ? "#8DA2C0" : "#98A2B3");
+        SetBrush("ThemeChipBrush", dark ? "#162641" : "#EEF3FC");
+
+        Background = (System.Windows.Media.Brush)Resources["PageBackgroundBrush"];
+        LogTextBox.CaretBrush = (System.Windows.Media.Brush)Resources["TextStrongBrush"];
+    }
+
+    private void SetBrush(string resourceKey, string color)
+        => Resources[resourceKey] = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+
     private void SetBusyState(bool isBusy)
     {
         ScanButton.IsEnabled = !isBusy;
@@ -358,7 +416,7 @@ public partial class MainWindow : Window
         UpdateButtonTop.IsEnabled = !isBusy;
         ProjectButton.IsEnabled = !isBusy && !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
         AppsDataGrid.IsEnabled = !isBusy;
-        System.Windows.Input.Mouse.OverrideCursor = isBusy ? System.Windows.Input.Cursors.Wait : null;
+        Mouse.OverrideCursor = isBusy ? Cursors.Wait : null;
     }
 
     private void HandleProgress(MigrationProgressInfo info)

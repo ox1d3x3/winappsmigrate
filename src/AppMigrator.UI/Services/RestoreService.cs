@@ -71,7 +71,7 @@ public sealed class RestoreService
                         var sourcePath = Path.Combine(extractionRoot, pathEntry.BackupRelativePath.Replace('/', Path.DirectorySeparatorChar));
                         var targetPath = PathHelper.RemapToCurrentMachine(pathEntry.OriginalPath, manifest.Machine);
 
-                        if (pathEntry.PathType == "directory")
+                        if (string.Equals(pathEntry.PathType, "directory", StringComparison.OrdinalIgnoreCase))
                         {
                             log?.Report($"Restoring directory: {targetPath}");
                             if (Directory.Exists(sourcePath))
@@ -87,6 +87,7 @@ public sealed class RestoreService
                                 var warning = $"Backup directory missing: {sourcePath}";
                                 perAppWarnings.Add(warning);
                                 log?.Report($"Warning: {warning}");
+                                continue;
                             }
                         }
                         else
@@ -105,6 +106,22 @@ public sealed class RestoreService
                                 var warning = $"Backup file missing: {sourcePath}";
                                 perAppWarnings.Add(warning);
                                 log?.Report($"Warning: {warning}");
+                                continue;
+                            }
+                        }
+
+                        if (pathEntry.Files.Count > 0)
+                        {
+                            var verification = FileCopyHelper.VerifyPath(targetPath, pathEntry.PathType, pathEntry.Files);
+                            pathEntry.RestoreVerified = verification.Succeeded;
+                            if (!verification.Succeeded)
+                            {
+                                perAppWarnings.AddRange(verification.Warnings);
+                                log?.Report($"Verification warning for {app.DisplayName}: {string.Join(" | ", verification.Warnings)}");
+                            }
+                            else
+                            {
+                                log?.Report($"Verification passed for {app.DisplayName}: {pathEntry.FileCount} file(s) verified.");
                             }
                         }
                     }
@@ -140,8 +157,9 @@ public sealed class RestoreService
                         log?.Report($"Restore notes for {app.DisplayName}: {string.Join(" | ", app.Warnings)}");
                     }
 
+                    var verifiedCount = app.Paths.Count(path => path.RestoreVerified || path.Files.Count == 0);
                     var status = perAppWarnings.Count == 0 ? "OK" : "WARN";
-                    reportLines.Add($"{status} | {app.DisplayName} | Paths: {app.Paths.Count} | Registry: {app.Registry.Count} | Warnings: {perAppWarnings.Count}");
+                    reportLines.Add($"{status} | {app.DisplayName} | Paths: {app.Paths.Count} | Verified: {verifiedCount}/{app.Paths.Count} | Registry: {app.Registry.Count} | Warnings: {perAppWarnings.Count}");
                 }
 
                 var reportPath = Path.Combine(extractionRoot, "restore_report.txt");
@@ -210,7 +228,7 @@ public sealed class RestoreService
         if (install.Succeeded)
         {
             log?.Report($"WinGet install completed for {app.DisplayName}");
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await Task.Delay(TimeSpan.FromSeconds(4));
             installedApps.Clear();
             installedApps.AddRange(await new AppDiscoveryService(_ruleRepository).DiscoverAsync());
             return;

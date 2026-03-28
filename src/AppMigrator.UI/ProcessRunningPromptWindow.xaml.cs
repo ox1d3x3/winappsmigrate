@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace AppMigrator.UI;
@@ -23,6 +24,32 @@ public partial class ProcessRunningPromptWindow : Window
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += Timer_Tick;
         _timer.Start();
+    }
+
+    public void ApplyTheme(string themeName)
+    {
+        var dark = string.Equals(themeName, "Dark", StringComparison.OrdinalIgnoreCase);
+        Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#0B1120" : "#F4F6FB"));
+        ShellBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#101828" : "#FFFFFF"));
+        ShellBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#243247" : "#DFE6F0"));
+        AlertBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#2C231A" : "#FFF7ED"));
+        ProcessesBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#111B2E" : "#FBFCFE"));
+        ProcessesBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#243247" : "#DFE6F0"));
+        TimerBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#182742" : "#EEF4FF"));
+
+        var primary = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#7AA2FF" : "#2E6BFF"));
+        var strong = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#F8FAFC" : "#101828"));
+        var muted = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#B3C1D9" : "#667085"));
+
+        TitleTextBlock.Foreground = strong;
+        SubtitleTextBlock.Foreground = muted;
+        ProcessesHeaderTextBlock.Foreground = strong;
+        MessageTextBlock.Foreground = muted;
+        TimerHeaderTextBlock.Foreground = primary;
+        CountdownTextBlock.Foreground = primary;
+        HelpTextBlock.Foreground = muted;
+        PromptNoteTextBlock.Foreground = muted;
+        ActionHintTextBlock.Foreground = muted;
     }
 
     private void Timer_Tick(object? sender, EventArgs e)

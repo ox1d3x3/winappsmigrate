@@ -45,6 +45,17 @@ public sealed class BackupPathEntry
     public string BackupRelativePath { get; set; } = string.Empty;
     public string PathType { get; set; } = "directory";
     public long SizeBytes { get; set; }
+    public int FileCount { get; set; }
+    public bool BackupVerified { get; set; }
+    public bool RestoreVerified { get; set; }
+    public List<BackupFileEntry> Files { get; set; } = new();
+}
+
+public sealed class BackupFileEntry
+{
+    public string RelativePath { get; set; } = string.Empty;
+    public long SizeBytes { get; set; }
+    public string Sha256 { get; set; } = string.Empty;
 }
 
 public sealed class RegistryBackupEntry

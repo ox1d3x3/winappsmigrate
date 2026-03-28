@@ -94,28 +94,65 @@ public sealed class BackupService
                             continue;
                         }
 
+                        var pathType = Directory.Exists(candidatePath) ? "directory" : "file";
+                        var verificationEntries = FileCopyHelper.BuildVerificationEntries(candidatePath, rule.ExcludeGlobs);
                         var backupRelative = Path.Combine("apps", PathHelper.MakeSafeName(entry.AppId), "files", $"item_{pathIndex:D2}");
                         var backupAbsolute = Path.Combine(stagingRoot, backupRelative);
                         log?.Report($"Capturing path: {candidatePath}");
 
-                        if (Directory.Exists(candidatePath))
+                        long copied;
+                        if (string.Equals(pathType, "directory", StringComparison.OrdinalIgnoreCase))
                         {
                             var size = FileCopyHelper.GetPathSize(candidatePath, rule.ExcludeGlobs);
-                            var copied = FileCopyHelper.CopyDirectory(candidatePath, backupAbsolute, rule.ExcludeGlobs, log, bytes =>
+                            copied = FileCopyHelper.CopyDirectory(candidatePath, backupAbsolute, rule.ExcludeGlobs, log, bytes =>
                             {
                                 processedBytes += bytes;
                                 Report(progress, "Backup", $"Copying files for {app.DisplayName}", app.DisplayName, index, apps.Count, processedBytes, totalBytes);
                             });
-                            entry.Paths.Add(new BackupPathEntry { OriginalPath = candidatePath, BackupRelativePath = backupRelative.Replace('\\', '/'), PathType = "directory", SizeBytes = size == 0 ? copied : size });
+
+                            var verification = FileCopyHelper.VerifyPath(backupAbsolute, pathType, verificationEntries);
+                            if (!verification.Succeeded)
+                            {
+                                entry.Warnings.AddRange(verification.Warnings);
+                                log?.Report($"Verification warning for {candidatePath}: {string.Join(" | ", verification.Warnings)}");
+                            }
+
+                            entry.Paths.Add(new BackupPathEntry
+                            {
+                                OriginalPath = candidatePath,
+                                BackupRelativePath = backupRelative.Replace('\\', '/'),
+                                PathType = pathType,
+                                SizeBytes = size == 0 ? copied : size,
+                                FileCount = verificationEntries.Count,
+                                BackupVerified = verification.Succeeded,
+                                Files = verificationEntries
+                            });
                         }
                         else
                         {
-                            var copied = FileCopyHelper.CopyFile(candidatePath, backupAbsolute, bytes =>
+                            copied = FileCopyHelper.CopyFile(candidatePath, backupAbsolute, bytes =>
                             {
                                 processedBytes += bytes;
                                 Report(progress, "Backup", $"Copying file for {app.DisplayName}", app.DisplayName, index, apps.Count, processedBytes, totalBytes);
                             });
-                            entry.Paths.Add(new BackupPathEntry { OriginalPath = candidatePath, BackupRelativePath = backupRelative.Replace('\\', '/'), PathType = "file", SizeBytes = copied });
+
+                            var verification = FileCopyHelper.VerifyPath(backupAbsolute, pathType, verificationEntries);
+                            if (!verification.Succeeded)
+                            {
+                                entry.Warnings.AddRange(verification.Warnings);
+                                log?.Report($"Verification warning for {candidatePath}: {string.Join(" | ", verification.Warnings)}");
+                            }
+
+                            entry.Paths.Add(new BackupPathEntry
+                            {
+                                OriginalPath = candidatePath,
+                                BackupRelativePath = backupRelative.Replace('\\', '/'),
+                                PathType = pathType,
+                                SizeBytes = copied,
+                                FileCount = verificationEntries.Count,
+                                BackupVerified = verification.Succeeded,
+                                Files = verificationEntries
+                            });
                         }
 
                         pathIndex++;
@@ -148,7 +185,8 @@ public sealed class BackupService
                     var perAppManifestPath = Path.Combine(appRoot, "app_manifest.json");
                     await File.WriteAllTextAsync(perAppManifestPath, JsonSerializer.Serialize(entry, JsonHelper.DefaultOptions));
                     manifest.Apps.Add(entry);
-                    reportLines.Add($"OK | {app.DisplayName} | Paths: {entry.Paths.Count} | Registry: {entry.Registry.Count} | Warnings: {entry.Warnings.Count}");
+                    var verifiedCount = entry.Paths.Count(path => path.BackupVerified);
+                    reportLines.Add($"OK | {app.DisplayName} | Paths: {entry.Paths.Count} | Verified: {verifiedCount}/{entry.Paths.Count} | Registry: {entry.Registry.Count} | Warnings: {entry.Warnings.Count}");
                 }
 
                 var manifestPath = Path.Combine(stagingRoot, "manifest.json");
