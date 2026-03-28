@@ -15,15 +15,17 @@ public sealed class RestoreService
 {
     private readonly RegistryService _registryService;
     private readonly WinGetService _winGetService;
+    private readonly ChocolateyService _chocolateyService;
     private readonly KnownRuleRepository _ruleRepository = new();
 
-    public RestoreService(RegistryService registryService, WinGetService winGetService)
+    public RestoreService(RegistryService registryService, WinGetService winGetService, ChocolateyService chocolateyService)
     {
         _registryService = registryService;
         _winGetService = winGetService;
+        _chocolateyService = chocolateyService;
     }
 
-    public Task RestoreAsync(string backupZipPath, bool attemptWinGetInstall, IProgress<MigrationProgressInfo>? progress = null, IProgress<string>? log = null)
+    public Task RestoreAsync(string backupZipPath, bool attemptPackageInstall, IProgress<MigrationProgressInfo>? progress = null, IProgress<string>? log = null)
         => Task.Run(async () =>
         {
             if (!File.Exists(backupZipPath))
@@ -37,6 +39,15 @@ public sealed class RestoreService
 
             try
             {
+                progress?.Report(new MigrationProgressInfo
+                {
+                    Stage = "Restore",
+                    Message = "Extracting backup ZIP",
+                    Percent = 0,
+                    TotalBytes = 1,
+                    IsIndeterminate = true
+                });
+
                 ZipFile.ExtractToDirectory(backupZipPath, extractionRoot);
                 var manifestPath = Path.Combine(extractionRoot, "manifest.json");
 
@@ -48,23 +59,63 @@ public sealed class RestoreService
                 var manifest = JsonSerializer.Deserialize<BackupManifest>(await File.ReadAllTextAsync(manifestPath), JsonHelper.DefaultOptions)
                     ?? throw new InvalidOperationException("Backup manifest could not be parsed.");
 
-                var discovery = new AppDiscoveryService(_ruleRepository);
-                var installedApps = await discovery.DiscoverAsync();
                 long totalBytes = manifest.Apps.SelectMany(a => a.Paths).Sum(p => p.SizeBytes);
                 long processedBytes = 0;
+                var packageProgressBase = attemptPackageInstall ? 35d : 0d;
+                var restoreProgressWeight = 100d - packageProgressBase;
                 log?.Report($"Loaded backup with {manifest.Apps.Count} app entries.");
+
+                if (attemptPackageInstall)
+                {
+                    var packageRequests = manifest.Apps
+                        .Select(app => new PackageInstallRequest
+                        {
+                            AppId = app.AppId,
+                            DisplayName = app.DisplayName,
+                            Version = app.Version,
+                            RestoreStrategy = app.RestoreStrategy,
+                            WingetId = app.WingetId,
+                            ChocolateyId = app.ChocolateyId
+                        })
+                        .Where(app => !string.IsNullOrWhiteSpace(app.DisplayName))
+                        .ToList();
+
+                    if (packageRequests.Count > 0)
+                    {
+                        var packageRestoreService = new PackageRestoreService(_ruleRepository, _winGetService, _chocolateyService);
+                        var packageResult = await packageRestoreService.RestorePackagesAsync(packageRequests, new Progress<MigrationProgressInfo>(pkg =>
+                        {
+                            progress?.Report(new MigrationProgressInfo
+                            {
+                                Stage = pkg.Stage,
+                                Message = pkg.Message,
+                                CurrentApp = pkg.CurrentApp,
+                                Percent = Math.Min(packageProgressBase, pkg.Percent * (packageProgressBase / 100d)),
+                                ProcessedItems = pkg.ProcessedItems,
+                                TotalItems = pkg.TotalItems,
+                                IsIndeterminate = pkg.IsIndeterminate,
+                                ProcessedBytes = 0,
+                                TotalBytes = 0
+                            });
+                        }), log);
+
+                        foreach (var packageLine in packageResult.Results.Where(x => string.Equals(x.Status, "Warning", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            reportLines.Add($"WARN | {packageLine.DisplayName} | Package manager: {packageLine.Manager} | {packageLine.Message}");
+                        }
+                    }
+                }
+                else
+                {
+                    log?.Report("Package reinstall step skipped by user choice.");
+                }
 
                 for (var appIndex = 0; appIndex < manifest.Apps.Count; appIndex++)
                 {
                     var app = manifest.Apps[appIndex];
                     var perAppWarnings = new List<string>();
                     log?.Report($"Restoring: {app.DisplayName}");
-                    Report(progress, "Restore", $"Preparing restore for {app.DisplayName}", app.DisplayName, appIndex, manifest.Apps.Count, processedBytes, totalBytes);
-
-                    if (attemptWinGetInstall)
-                    {
-                        await EnsureAppInstalledAsync(app, installedApps, perAppWarnings, log);
-                    }
+                    Report(progress, "Restore", $"Preparing restore for {app.DisplayName}", app.DisplayName, appIndex, manifest.Apps.Count, processedBytes, totalBytes, packageProgressBase, restoreProgressWeight);
 
                     foreach (var pathEntry in app.Paths)
                     {
@@ -79,7 +130,7 @@ public sealed class RestoreService
                                 FileCopyHelper.CopyDirectory(sourcePath, targetPath, Array.Empty<string>(), log, bytes =>
                                 {
                                     processedBytes += bytes;
-                                    Report(progress, "Restore", $"Restoring files for {app.DisplayName}", app.DisplayName, appIndex, manifest.Apps.Count, processedBytes, totalBytes);
+                                    Report(progress, "Restore", $"Restoring files for {app.DisplayName}", app.DisplayName, appIndex, manifest.Apps.Count, processedBytes, totalBytes, packageProgressBase, restoreProgressWeight);
                                 });
                             }
                             else
@@ -98,7 +149,7 @@ public sealed class RestoreService
                                 FileCopyHelper.CopyFile(sourcePath, targetPath, bytes =>
                                 {
                                     processedBytes += bytes;
-                                    Report(progress, "Restore", $"Restoring file for {app.DisplayName}", app.DisplayName, appIndex, manifest.Apps.Count, processedBytes, totalBytes);
+                                    Report(progress, "Restore", $"Restoring file for {app.DisplayName}", app.DisplayName, appIndex, manifest.Apps.Count, processedBytes, totalBytes, packageProgressBase, restoreProgressWeight);
                                 });
                             }
                             else
@@ -167,7 +218,7 @@ public sealed class RestoreService
                 var sidecar = Path.Combine(Path.GetDirectoryName(backupZipPath)!, $"{Path.GetFileNameWithoutExtension(backupZipPath)}.restore_report.txt");
                 File.Copy(reportPath, sidecar, true);
 
-                Report(progress, "Restore", "Restore completed.", null, manifest.Apps.Count, manifest.Apps.Count, totalBytes, totalBytes);
+                Report(progress, "Restore", "Restore completed.", null, manifest.Apps.Count, manifest.Apps.Count, totalBytes, totalBytes, packageProgressBase, restoreProgressWeight);
                 log?.Report("Restore finished.");
             }
             finally
@@ -185,97 +236,13 @@ public sealed class RestoreService
             }
         });
 
-    private async Task EnsureAppInstalledAsync(AppBackupEntry app, List<DiscoveredApp> installedApps, List<string> warnings, IProgress<string>? log)
+    private static void Report(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, int currentIndex, int totalApps, long processedBytes, long totalBytes, double basePercent, double activeWeight)
     {
-        if (_winGetService.IsAvailable() is false)
-        {
-            log?.Report("WinGet is not available on this system.");
-            return;
-        }
-
-        if (IsAlreadyInstalled(app, installedApps))
-        {
-            log?.Report($"Install check: {app.DisplayName} already appears to be installed. Skipping WinGet install.");
-            return;
-        }
-
-        string? packageId = app.WingetId;
-        if (string.IsNullOrWhiteSpace(packageId) && !string.IsNullOrWhiteSpace(app.AppId))
-        {
-            packageId = _ruleRepository.GetById(app.AppId)?.WingetId;
-        }
-
-        if (string.IsNullOrWhiteSpace(packageId))
-        {
-            log?.Report($"Searching WinGet for {app.DisplayName}...");
-            var lookup = await _winGetService.FindPackageIdByNameAsync(app.DisplayName);
-            if (lookup.Found)
-            {
-                packageId = lookup.PackageId;
-                log?.Report(lookup.Message);
-            }
-            else
-            {
-                var warning = $"WinGet package was not found for {app.DisplayName}.";
-                warnings.Add(warning);
-                log?.Report($"Warning: {warning} {lookup.Message}".Trim());
-                return;
-            }
-        }
-
-        log?.Report($"Attempting WinGet install for {app.DisplayName} ({packageId})");
-        var install = await _winGetService.InstallWithRecoveryAsync(packageId!);
-        if (install.Succeeded)
-        {
-            log?.Report($"WinGet install completed for {app.DisplayName}");
-            await Task.Delay(TimeSpan.FromSeconds(4));
-            installedApps.Clear();
-            installedApps.AddRange(await new AppDiscoveryService(_ruleRepository).DiscoverAsync());
-            return;
-        }
-
-        var warningText = $"WinGet install warning for {app.DisplayName}: {install.Message}";
-        warnings.Add(warningText);
-        log?.Report(warningText);
-    }
-
-    private static bool IsAlreadyInstalled(AppBackupEntry app, IEnumerable<DiscoveredApp> installedApps)
-    {
-        foreach (var installed in installedApps)
-        {
-            if (!string.IsNullOrWhiteSpace(app.WingetId)
-                && !string.IsNullOrWhiteSpace(installed.WingetId)
-                && string.Equals(app.WingetId, installed.WingetId, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (!string.IsNullOrWhiteSpace(app.AppId)
-                && string.Equals(installed.RuleId, app.AppId, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (string.Equals(installed.DisplayName, app.DisplayName, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (installed.DisplayName.Contains(app.DisplayName, StringComparison.OrdinalIgnoreCase)
-                || app.DisplayName.Contains(installed.DisplayName, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void Report(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, int currentIndex, int totalApps, long processedBytes, long totalBytes)
-    {
-        var appWeight = totalApps == 0 ? 0 : (double)currentIndex / totalApps * 100d;
-        var byteWeight = totalBytes <= 0 ? 0 : (double)processedBytes / totalBytes * 100d;
-        var percent = Math.Min(100d, Math.Max(appWeight, byteWeight));
+        var bytesPortion = totalBytes <= 0 ? 0 : (double)processedBytes / Math.Max(totalBytes, 1) * activeWeight;
+        var appsPortion = totalApps == 0 ? 0 : (double)currentIndex / totalApps * activeWeight;
+        var percent = totalBytes <= 0
+            ? Math.Min(100d, totalApps == 0 ? basePercent : basePercent + ((double)currentIndex / totalApps * activeWeight))
+            : Math.Min(100d, basePercent + Math.Max(bytesPortion, appsPortion));
 
         progress?.Report(new MigrationProgressInfo
         {
@@ -284,7 +251,10 @@ public sealed class RestoreService
             CurrentApp = currentApp,
             Percent = percent,
             ProcessedBytes = processedBytes,
-            TotalBytes = totalBytes
+            TotalBytes = totalBytes,
+            ProcessedItems = currentIndex,
+            TotalItems = totalApps,
+            IsIndeterminate = false
         });
     }
 

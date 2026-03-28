@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -31,6 +32,7 @@ public sealed class DiscoveredApp : INotifyPropertyChanged
     public string RestoreStrategy { get; set; } = "unsupported";
     public string RuleId { get; set; } = string.Empty;
     public string? WingetId { get; set; }
+    public string? ChocolateyId { get; set; }
     public bool Supported { get; set; }
     public double Confidence { get; set; }
     public string Notes { get; set; } = string.Empty;

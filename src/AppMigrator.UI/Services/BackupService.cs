@@ -15,6 +15,7 @@ public sealed class BackupService
 {
     private readonly KnownRuleRepository _ruleRepository;
     private readonly RegistryService _registryService;
+    private readonly PackageManifestService _packageManifestService = new();
 
     public BackupService(KnownRuleRepository ruleRepository, RegistryService registryService)
     {
@@ -56,6 +57,7 @@ public sealed class BackupService
                         Category = app.Category,
                         RestoreStrategy = app.RestoreStrategy,
                         WingetId = app.WingetId,
+                        ChocolateyId = app.ChocolateyId,
                         OriginalInstallLocation = app.InstallLocation,
                         Notes = rule?.Notes?.ToList() ?? new List<string> { app.Notes },
                         ProcessNames = rule?.ProcessNames?.ToList() ?? new List<string>()
@@ -192,21 +194,20 @@ public sealed class BackupService
                 var manifestPath = Path.Combine(stagingRoot, "manifest.json");
                 await File.WriteAllTextAsync(manifestPath, JsonSerializer.Serialize(manifest, JsonHelper.DefaultOptions));
 
-                var reportPath = Path.Combine(stagingRoot, "backup_report.txt");
-                await File.WriteAllTextAsync(reportPath, BuildReport("Backup", reportLines));
+                var packageManifestPath = Path.Combine(stagingRoot, "packages.xml");
+                await _packageManifestService.ExportAsync(packageManifestPath, apps, log);
 
                 if (File.Exists(outputZipPath))
                 {
                     File.Delete(outputZipPath);
                 }
 
-                Directory.CreateDirectory(Path.GetDirectoryName(outputZipPath)!);
-                ZipFile.CreateFromDirectory(stagingRoot, outputZipPath, CompressionLevel.Optimal, false);
+                Report(progress, "Backup", "Building ZIP archive", null, apps.Count, apps.Count, processedBytes, totalBytes);
+                ZipFile.CreateFromDirectory(stagingRoot, outputZipPath, CompressionLevel.Fastest, false);
 
-                var sidecarReportPath = Path.ChangeExtension(outputZipPath, ".backup_report.txt");
-                File.Copy(reportPath, sidecarReportPath, true);
+                var report = BuildReport(reportLines);
+                File.WriteAllText(Path.Combine(Path.GetDirectoryName(outputZipPath)!, $"{Path.GetFileNameWithoutExtension(outputZipPath)}.backup_report.txt"), report);
 
-                log?.Report($"Backup ZIP created: {outputZipPath}");
                 Report(progress, "Backup", "Backup completed.", null, apps.Count, apps.Count, totalBytes, totalBytes);
                 return outputZipPath;
             }
@@ -225,7 +226,7 @@ public sealed class BackupService
             }
         });
 
-    private long EstimateTotalBytes(IReadOnlyList<DiscoveredApp> apps)
+    private long EstimateTotalBytes(IEnumerable<DiscoveredApp> apps)
     {
         long total = 0;
         foreach (var app in apps)
@@ -236,13 +237,20 @@ public sealed class BackupService
                 continue;
             }
 
-            foreach (var path in rule.IncludePaths.Select(PathHelper.ExpandVariables))
+            var paths = new List<string>();
+            paths.AddRange(rule.IncludePaths.Select(PathHelper.ExpandVariables));
+            if (rule.IncludeInstallLocation && !string.IsNullOrWhiteSpace(app.InstallLocation))
             {
-                total += FileCopyHelper.GetPathSize(path, rule.ExcludeGlobs);
+                paths.Add(app.InstallLocation);
+            }
+
+            foreach (var candidate in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                total += FileCopyHelper.GetPathSize(candidate, rule.ExcludeGlobs);
             }
         }
 
-        return Math.Max(total, 1);
+        return total == 0 ? 1 : total;
     }
 
     private static void Report(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, int currentIndex, int totalApps, long processedBytes, long totalBytes)
@@ -258,14 +266,17 @@ public sealed class BackupService
             CurrentApp = currentApp,
             Percent = percent,
             ProcessedBytes = processedBytes,
-            TotalBytes = totalBytes
+            TotalBytes = totalBytes,
+            ProcessedItems = currentIndex,
+            TotalItems = totalApps,
+            IsIndeterminate = false
         });
     }
 
-    private static string BuildReport(string title, IEnumerable<string> lines)
+    private static string BuildReport(IEnumerable<string> lines)
     {
         var builder = new StringBuilder();
-        builder.AppendLine($"{title} report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        builder.AppendLine($"Backup report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         builder.AppendLine($"Tool: {AppMetadata.DisplayTitle}");
         builder.AppendLine();
         foreach (var line in lines)

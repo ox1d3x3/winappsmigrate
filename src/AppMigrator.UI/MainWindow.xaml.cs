@@ -4,12 +4,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Threading;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
@@ -24,6 +26,8 @@ public partial class MainWindow : Window
     private readonly KnownRuleRepository _ruleRepository = new();
     private readonly RegistryService _registryService = new();
     private readonly WinGetService _winGetService = new();
+    private readonly ChocolateyService _chocolateyService = new();
+    private readonly PackageManifestService _packageManifestService = new();
     private readonly ProcessMonitorService _processMonitorService;
     private readonly UpdateService _updateService = new();
     private readonly UserSettingsService _userSettingsService = new();
@@ -89,6 +93,7 @@ public partial class MainWindow : Window
                || app.Version.Contains(search, StringComparison.OrdinalIgnoreCase)
                || app.InstallLocation.Contains(search, StringComparison.OrdinalIgnoreCase)
                || (app.WingetId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+               || (app.ChocolateyId?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
                || app.Notes.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -204,7 +209,7 @@ public partial class MainWindow : Window
             await backupService.CreateBackupAsync(readiness.ReadyApps, dialog.FileName, new Progress<MigrationProgressInfo>(HandleProgress), new Progress<string>(Log));
 
             Log($"Backup completed successfully: {dialog.FileName}");
-            MessageBox.Show(this, $"Backup completed successfully.\n\nZIP: {dialog.FileName}\nReport: {Path.ChangeExtension(dialog.FileName, ".backup_report.txt")}", "Backup complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, $"Backup completed successfully.\n\nZIP: {dialog.FileName}\nReport: {Path.ChangeExtension(dialog.FileName, ".backup_report.txt")}\nEmbedded package list: packages.xml", "Backup complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
@@ -231,8 +236,8 @@ public partial class MainWindow : Window
         }
 
         var restoreMessage = UseWingetCheckBox.IsChecked == true
-            ? "Restore from the selected ZIP and install missing apps with WinGet when possible?"
-            : "Restore from the selected ZIP?";
+            ? "Restore from the selected ZIP, install missing apps with WinGet / Chocolatey when possible, then restore the data?"
+            : "Restore from the selected ZIP without package reinstall?";
 
         var confirm = MessageBox.Show(this, restoreMessage, "Confirm restore", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes)
@@ -246,7 +251,7 @@ public partial class MainWindow : Window
             ResetProgress();
             Log($"Starting restore from {dialog.FileName}");
 
-            var restoreService = new RestoreService(_registryService, _winGetService);
+            var restoreService = new RestoreService(_registryService, _winGetService, _chocolateyService);
             await restoreService.RestoreAsync(dialog.FileName, UseWingetCheckBox.IsChecked == true, new Progress<MigrationProgressInfo>(HandleProgress), new Progress<string>(Log));
 
             Log("Restore completed.");
@@ -256,6 +261,94 @@ public partial class MainWindow : Window
         {
             Log($"Restore failed: {ex.Message}");
             MessageBox.Show(this, ex.Message, "Restore failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetBusyState(false);
+        }
+    }
+
+    private async void ExportAppsXmlButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_apps.Count == 0)
+        {
+            MessageBox.Show(this, "Scan installed apps first so there is something to export.", "Nothing to export", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var selectedApps = _apps.Where(app => app.IsSelected).ToList();
+        var exportApps = selectedApps.Count > 0 ? selectedApps : _apps.ToList();
+        var exportScope = selectedApps.Count > 0 ? "selected" : "all scanned";
+
+        var dialog = new SaveFileDialog
+        {
+            Filter = "XML files (*.xml)|*.xml",
+            Title = "Export app install list",
+            FileName = $"WinAppsMigrator_Packages_{DateTime.Now:yyyyMMdd_HHmmss}.xml"
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            SetBusyState(true);
+            ResetProgress();
+            Log($"Exporting {exportScope} apps to XML.");
+            await _packageManifestService.ExportAsync(dialog.FileName, exportApps, new Progress<string>(Log));
+            Log($"App list XML exported: {dialog.FileName}");
+            MessageBox.Show(this, $"App list exported successfully.\n\nScope: {exportScope}\nApps: {exportApps.Count}\nFile: {dialog.FileName}", "Export complete", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            Log($"XML export failed: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "Export failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetBusyState(false);
+        }
+    }
+
+    private async void RestoreAppsXmlButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Filter = "XML files (*.xml)|*.xml",
+            Title = "Select app install XML"
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var confirm = MessageBox.Show(this, "Install apps from the selected XML using WinGet first and Chocolatey as fallback where possible?", "Confirm app restore", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            SetBusyState(true);
+            ResetProgress();
+            Log($"Starting app reinstall from XML: {dialog.FileName}");
+
+            var packageRestoreService = new PackageRestoreService(_ruleRepository, _winGetService, _chocolateyService);
+            var result = await packageRestoreService.RestoreFromXmlAsync(dialog.FileName, new Progress<MigrationProgressInfo>(HandleProgress), new Progress<string>(Log));
+            var reportPath = Path.Combine(Path.GetDirectoryName(dialog.FileName)!, $"{Path.GetFileNameWithoutExtension(dialog.FileName)}.install_report.txt");
+            await File.WriteAllTextAsync(reportPath, PackageRestoreService.BuildReport(result));
+
+            Log($"App reinstall completed. Installed: {result.InstalledCount}, already installed: {result.AlreadyInstalledCount}, warnings: {result.WarningCount}");
+            MessageBox.Show(this, $"App reinstall completed.\n\nInstalled: {result.InstalledCount}\nAlready installed: {result.AlreadyInstalledCount}\nWarnings: {result.WarningCount}\nReport: {reportPath}", "App reinstall complete", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            Log($"App reinstall failed: {ex.Message}");
+            MessageBox.Show(this, ex.Message, "App reinstall failed", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -444,6 +537,8 @@ public partial class MainWindow : Window
         ClearSelectionButton.IsEnabled = !isBusy;
         BackupButton.IsEnabled = !isBusy;
         RestoreButton.IsEnabled = !isBusy;
+        ExportAppsXmlButton.IsEnabled = !isBusy;
+        RestoreAppsXmlButton.IsEnabled = !isBusy;
         UpdateButton.IsEnabled = !isBusy;
         UpdateButtonTop.IsEnabled = !isBusy;
         ProjectButton.IsEnabled = !isBusy && !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
@@ -463,7 +558,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        OperationProgressBar.Value = info.Percent;
+        OperationProgressBar.IsIndeterminate = info.IsIndeterminate;
+        if (!info.IsIndeterminate)
+        {
+            OperationProgressBar.Value = info.Percent;
+        }
+
         ProgressStageTextBlock.Text = string.IsNullOrWhiteSpace(info.Stage) ? "Working" : info.Stage;
         ProgressMessageTextBlock.Text = info.Message;
         CurrentAppTextBlock.Text = string.IsNullOrWhiteSpace(info.CurrentApp) ? "—" : info.CurrentApp;
@@ -475,20 +575,36 @@ public partial class MainWindow : Window
         _lastProgressStamp = now;
         _lastProgressBytes = info.ProcessedBytes;
 
-        TransferStatsTextBlock.Text = $"{FormatBytes(info.ProcessedBytes)} / {FormatBytes(info.TotalBytes)}";
-        if (bytesPerSecond > 0 && info.TotalBytes > info.ProcessedBytes)
+        if (info.TotalBytes > 0 && (info.ProcessedBytes > 0 || !info.IsIndeterminate))
         {
-            var etaSeconds = (info.TotalBytes - info.ProcessedBytes) / bytesPerSecond;
-            EtaTextBlock.Text = $"ETA: {TimeSpan.FromSeconds(etaSeconds):mm\\:ss}  •  {FormatBytes((long)bytesPerSecond)}/s";
+            TransferStatsTextBlock.Text = $"{FormatBytes(info.ProcessedBytes)} / {FormatBytes(info.TotalBytes)}";
+            if (bytesPerSecond > 0 && info.TotalBytes > info.ProcessedBytes)
+            {
+                var etaSeconds = (info.TotalBytes - info.ProcessedBytes) / bytesPerSecond;
+                EtaTextBlock.Text = $"ETA: {TimeSpan.FromSeconds(etaSeconds):mm\\:ss}  •  {FormatBytes((long)bytesPerSecond)}/s";
+            }
+            else
+            {
+                EtaTextBlock.Text = info.IsIndeterminate ? "Package manager is working…" : "ETA: --";
+            }
+
+            return;
         }
-        else
+
+        if (info.TotalItems > 0)
         {
-            EtaTextBlock.Text = "ETA: --";
+            TransferStatsTextBlock.Text = $"Apps: {Math.Min(info.ProcessedItems, info.TotalItems)} / {info.TotalItems}";
+            EtaTextBlock.Text = info.IsIndeterminate ? "Installing package manager task…" : "Phase progress tracked by app count.";
+            return;
         }
+
+        TransferStatsTextBlock.Text = "Waiting for progress…";
+        EtaTextBlock.Text = info.IsIndeterminate ? "Working…" : "ETA: --";
     }
 
     private void ResetProgress()
     {
+        OperationProgressBar.IsIndeterminate = false;
         OperationProgressBar.Value = 0;
         ProgressStageTextBlock.Text = "Ready";
         ProgressMessageTextBlock.Text = "Close selected apps before backup or restore for best results.";

@@ -11,6 +11,7 @@ public sealed class AppRule
     public bool Supported { get; set; }
     public double Confidence { get; set; }
     public string? WingetId { get; set; }
+    public string? ChocolateyId { get; set; }
     public bool IncludeInstallLocation { get; set; }
     public List<string> MatchTokens { get; set; } = new();
     public List<string> MatchDisplayNames { get; set; } = new();

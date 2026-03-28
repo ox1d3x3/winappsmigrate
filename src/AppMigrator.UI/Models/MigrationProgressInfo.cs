@@ -8,4 +8,7 @@ public sealed class MigrationProgressInfo
     public double Percent { get; set; }
     public long ProcessedBytes { get; set; }
     public long TotalBytes { get; set; }
+    public int ProcessedItems { get; set; }
+    public int TotalItems { get; set; }
+    public bool IsIndeterminate { get; set; }
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AppMigrator.UI.Services;
 
-public sealed class WinGetService
+public sealed class ChocolateyService
 {
     public bool IsAvailable()
     {
@@ -23,28 +23,10 @@ public sealed class WinGetService
         }
     }
 
-    public async Task<(bool Succeeded, string Message)> InstallWithRecoveryAsync(string packageId, IProgress<string>? liveOutput = null)
-    {
-        var install = await InstallByIdAsync(packageId, liveOutput);
-        if (install.Succeeded)
-        {
-            return install;
-        }
-
-        if (NeedsSourceRecovery(install.Message))
-        {
-            liveOutput?.Report("WinGet source issue detected. Resetting sources and retrying.");
-            await ResetSourcesAsync(liveOutput);
-            install = await InstallByIdAsync(packageId, liveOutput);
-        }
-
-        return install;
-    }
-
     public async Task<(bool Succeeded, string Message)> InstallByIdAsync(string packageId, IProgress<string>? liveOutput = null)
     {
-        var escapedPackageId = packageId.Replace("\"", string.Empty);
-        return await RunAsync($"install --id \"{escapedPackageId}\" -e --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements", liveOutput);
+        var safeId = EscapeArg(packageId);
+        return await RunAsync($"install {safeId} -y --no-progress", liveOutput);
     }
 
     public async Task<(bool Found, string? PackageId, string Message)> FindPackageIdByNameAsync(string appName, IProgress<string>? liveOutput = null)
@@ -54,63 +36,72 @@ public sealed class WinGetService
             return (false, null, "App name is empty.");
         }
 
-        var exact = await RunAsync($"search --name \"{EscapeArg(appName)}\" --exact --source winget --accept-source-agreements", liveOutput);
-        var exactId = TryParsePackageId(exact.Message, appName);
-        if (exactId is not null)
+        var result = await RunAsync($"search \"{EscapeArg(appName)}\" --limit-output", liveOutput);
+        if (!result.Succeeded)
         {
-            return (true, exactId, $"Matched WinGet package: {exactId}");
+            return (false, null, result.Message);
         }
 
-        var broad = await RunAsync($"search \"{EscapeArg(appName)}\" --source winget --accept-source-agreements", liveOutput);
-        var broadId = TryParsePackageId(broad.Message, appName);
-        return broadId is not null
-            ? (true, broadId, $"Matched WinGet package: {broadId}")
-            : (false, null, SanitizeMessage(broad.Message));
+        var packageId = TryParsePackageId(result.Message, appName);
+        return packageId is null
+            ? (false, null, result.Message)
+            : (true, packageId, $"Matched Chocolatey package: {packageId}");
     }
-
-    public async Task ResetSourcesAsync(IProgress<string>? liveOutput = null)
-    {
-        await RunAsync("source reset --force", liveOutput);
-        await RunAsync("source update", liveOutput);
-    }
-
-    private static bool NeedsSourceRecovery(string message)
-        => message.Contains("Failed when opening source(s)", StringComparison.OrdinalIgnoreCase)
-           || message.Contains("Failed when searching source", StringComparison.OrdinalIgnoreCase)
-           || message.Contains("0x8a15005e", StringComparison.OrdinalIgnoreCase);
 
     private static string EscapeArg(string value) => value.Replace("\"", string.Empty);
 
     private static string? TryParsePackageId(string rawOutput, string appName)
     {
-        var lines = SanitizeMessage(rawOutput)
-            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim())
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
+        var normalizedApp = Normalize(appName);
+        var bestPackageId = default(string);
+        var bestScore = 0;
 
-        foreach (var line in lines)
+        foreach (var line in SanitizeMessage(rawOutput).Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
         {
-            if (line.StartsWith("Name", StringComparison.OrdinalIgnoreCase)
-                || line.StartsWith("-", StringComparison.OrdinalIgnoreCase)
-                || line.StartsWith("Found ", StringComparison.OrdinalIgnoreCase)
-                || line.Contains("Source", StringComparison.OrdinalIgnoreCase) && line.Contains("Id", StringComparison.OrdinalIgnoreCase))
+            var parts = line.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length == 0)
             {
                 continue;
             }
 
-            var parts = Regex.Split(line, "\\s{2,}").Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
-            if (parts.Length >= 2)
+            var packageId = parts[0].Trim();
+            if (string.IsNullOrWhiteSpace(packageId))
             {
-                if (parts[0].Contains(appName, StringComparison.OrdinalIgnoreCase) || appName.Contains(parts[0], StringComparison.OrdinalIgnoreCase))
-                {
-                    return parts[1].Trim();
-                }
+                continue;
+            }
+
+            var normalizedPackage = Normalize(packageId);
+            var score = Score(normalizedApp, normalizedPackage);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestPackageId = packageId;
             }
         }
 
-        return null;
+        return bestScore >= 40 ? bestPackageId : null;
     }
+
+    private static int Score(string expected, string actual)
+    {
+        if (string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
+        {
+            return 100;
+        }
+
+        if (actual.Contains(expected, StringComparison.OrdinalIgnoreCase) || expected.Contains(actual, StringComparison.OrdinalIgnoreCase))
+        {
+            return 80;
+        }
+
+        var expectedTokens = expected.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var actualTokens = actual.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var overlap = expectedTokens.Intersect(actualTokens, StringComparer.OrdinalIgnoreCase).Count();
+        return overlap * 20;
+    }
+
+    private static string Normalize(string value)
+        => Regex.Replace(value, @"[^a-zA-Z0-9]+", " ").Trim().ToLowerInvariant();
 
     private static string SanitizeMessage(string raw)
     {
@@ -131,12 +122,10 @@ public sealed class WinGetService
                 continue;
             }
 
-            if (Regex.IsMatch(trimmed, @"^[\\|/\\-]+$"))
-            {
-                continue;
-            }
-
-            if (Regex.IsMatch(trimmed, @"^[\u2580-\u259F\s\.:%/\\-]+$"))
+            if (trimmed.StartsWith("Chocolatey v", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("packages found", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("No packages found", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("See the log", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -151,7 +140,7 @@ public sealed class WinGetService
     {
         var psi = new ProcessStartInfo
         {
-            FileName = "winget",
+            FileName = "choco",
             Arguments = arguments,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -196,7 +185,7 @@ public sealed class WinGetService
 
         if (!process.Start())
         {
-            return (false, "Failed to start winget.");
+            return (false, "Failed to start Chocolatey.");
         }
 
         process.BeginOutputReadLine();
@@ -213,6 +202,6 @@ public sealed class WinGetService
 
         return process.ExitCode == 0
             ? (true, string.IsNullOrWhiteSpace(message) ? "Command completed successfully." : message)
-            : (false, string.IsNullOrWhiteSpace(message) ? "WinGet command failed." : message);
+            : (false, string.IsNullOrWhiteSpace(message) ? "Chocolatey command failed." : message);
     }
 }

@@ -31,6 +31,7 @@ public sealed class AppBackupEntry
     public string Category { get; set; } = string.Empty;
     public string RestoreStrategy { get; set; } = string.Empty;
     public string? WingetId { get; set; }
+    public string? ChocolateyId { get; set; }
     public string OriginalInstallLocation { get; set; } = string.Empty;
     public List<string> ProcessNames { get; set; } = new();
     public List<string> Notes { get; set; } = new();

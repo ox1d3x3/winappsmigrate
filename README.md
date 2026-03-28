@@ -2,7 +2,7 @@
 
 **Win Apps Migrator** is a Windows application backup and restore utility designed to help users migrate supported app data, profile data, selected settings, and related user-state content between Windows installations.
 
-The project focuses on practical migration workflows for supported applications such as browsers and other profile-based apps, while also providing backup and restore logging, verification steps, and reinstall assistance through WinGet where applicable.
+The project focuses on practical migration workflows for supported applications such as browsers and other profile-based apps, while also providing backup and restore logging, verification steps, and reinstall assistance through **WinGet and Chocolatey** where applicable.
 
 ## Important Disclaimer
 
@@ -20,7 +20,9 @@ The application is currently focused on:
 - Identifying supported applications through built-in migration rules
 - Backing up supported application data into a ZIP archive
 - Restoring supported application data to the correct user profile paths
-- Attempting reinstall of missing supported apps through WinGet before restore
+- Attempting reinstall of missing supported apps through WinGet and Chocolatey before restore
+- Exporting installed app package lists to XML for rebuilds on fresh Windows installs
+- Reinstalling apps from exported XML package manifests
 - Generating logs and verification output for backup and restore operations
 
 ## Current Testing Notes
@@ -35,14 +37,11 @@ Because this is beta software, results can vary depending on:
 - Windows version differences
 - Whether the target app is closed during backup/restore
 - Licensing, machine-bound settings, services, or driver dependencies
-- WinGet source availability and package match accuracy
-
+- Package manager source availability and package match accuracy
 
 ## Screenshots
 <img width="1395" height="904" alt="image" src="https://github.com/user-attachments/assets/24daefb5-a1cd-48be-a18d-efb020b26838" />
 <img width="1399" height="904" alt="image" src="https://github.com/user-attachments/assets/cf7c9733-c227-4991-87b7-69d4c9002bfe" />
-
-
 
 ## What the App Is Intended to Do
 
@@ -53,6 +52,7 @@ Win Apps Migrator is intended to make application migration easier by handling t
 - Selected registry-backed settings where supported
 - Rule-based restore targeting
 - Reinstall assistance for missing apps
+- XML package-list export and rebuild workflows
 - Backup and restore reporting
 
 For supported applications, the goal is to restore the user environment as cleanly as possible without requiring the user to manually hunt through AppData, registry paths, or scattered configuration folders.
@@ -100,7 +100,8 @@ Win Apps Migrator is under active beta development with ongoing work across:
 - UI refinement
 - App rule coverage
 - Restore reliability
-- WinGet reinstall handling
+- WinGet / Chocolatey reinstall handling
+- XML app-list export and package-restore workflows
 - Verification improvements
 - Theme and workflow polish
 

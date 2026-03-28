@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Win Apps Migrator v0.0.19"
+        Title="Win Apps Migrator v0.0.20"
         Width="1420"
         Height="840"
         MinWidth="1080"
@@ -456,6 +456,26 @@
                                         <TextBlock Text="Restore backup ZIP" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
+
+                                <Button x:Name="ExportAppsXmlButton"
+                                        Style="{StaticResource TonalButtonStyle}"
+                                        Click="ExportAppsXmlButton_Click"
+                                        Margin="0,6,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ContentSaveOutline" Width="16" Height="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Export app list XML" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button x:Name="RestoreAppsXmlButton"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="RestoreAppsXmlButton_Click"
+                                        Margin="0,6,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Restore" Width="16" Height="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Restore apps from XML" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                         </Border>
 
@@ -506,7 +526,7 @@
                                 <CheckBox x:Name="UseWingetCheckBox"
                                           IsChecked="True"
                                           Style="{StaticResource ModernCheckBoxStyle}">
-                                    Install missing apps with WinGet during restore
+                                    Auto-install missing apps with WinGet / Chocolatey before data restore
                                 </CheckBox>
                             </StackPanel>
                         </Border>
@@ -698,7 +718,7 @@
 
                                 <Border Grid.Column="4" Style="{StaticResource MetricTileStyle}">
                                     <StackPanel>
-                                        <TextBlock Text="Transfer"
+                                        <TextBlock Text="Progress"
                                                    Foreground="{DynamicResource TextMutedBrush}"
                                                    FontSize="13"/>
                                         <TextBlock x:Name="TransferStatsTextBlock"

@@ -110,6 +110,7 @@ public sealed class AppDiscoveryService
                     RestoreStrategy = matchedRule?.RestoreStrategy ?? "unsupported",
                     RuleId = matchedRule?.Id ?? string.Empty,
                     WingetId = matchedRule?.WingetId,
+                    ChocolateyId = matchedRule?.ChocolateyId,
                     Supported = matchedRule?.Supported ?? false,
                     Confidence = matchedRule?.Confidence ?? 0.15,
                     Notes = matchedRule is null
