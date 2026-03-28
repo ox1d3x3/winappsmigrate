@@ -24,3 +24,6 @@ This package contains the WPF/.NET 8 Windows prototype for Win Apps Migrator.
 ## Notes
 - Best results come from restoring after the target app is installed.
 - Close browsers, sync clients, editors, and Adobe apps before backup or restore.
+
+
+V0.0.4: fixed single-file startup by removing runtime file-based window icon dependency and added startup crash logging to %LOCALAPPDATA%\WinAppsMigrator\startup-crash.log.

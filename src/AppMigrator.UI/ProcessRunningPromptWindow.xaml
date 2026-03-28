@@ -7,8 +7,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#F4F6F8"
-        WindowStyle="SingleBorderWindow"
-        Icon="Assets/WinAppsMigrator.ico">
+        WindowStyle="SingleBorderWindow">
     <Grid Margin="18">
         <Border CornerRadius="24" Background="White" BorderBrush="#E7ECF2" BorderThickness="1" Padding="20">
             <Grid>

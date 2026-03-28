@@ -4,14 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Win Apps Migrator V0.0.3"
+        Title="Win Apps Migrator V0.0.4"
         Height="900"
         Width="1540"
         MinHeight="820"
         MinWidth="1320"
         Background="#F4F6F8"
-        WindowStartupLocation="CenterScreen"
-        Icon="Assets/WinAppsMigrator.ico">
+        WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <SolidColorBrush x:Key="PageBackgroundBrush" Color="#F4F6F8"/>
         <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFFFF"/>
