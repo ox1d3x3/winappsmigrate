@@ -1,84 +1,487 @@
 <Window x:Class="AppMigrator.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Win Apps Migrator V0.0.1"
-        Height="760"
-        Width="1320"
-        WindowStartupLocation="CenterScreen">
-    <Grid Margin="14">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="220" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Win Apps Migrator V0.0.3"
+        Height="900"
+        Width="1540"
+        MinHeight="820"
+        MinWidth="1320"
+        Background="#F4F6F8"
+        WindowStartupLocation="CenterScreen"
+        Icon="Assets/WinAppsMigrator.ico">
+    <Window.Resources>
+        <SolidColorBrush x:Key="PageBackgroundBrush" Color="#F4F6F8"/>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="ElevatedSurfaceBrush" Color="#F9FAFB"/>
+        <SolidColorBrush x:Key="StrokeBrush" Color="#E7ECF2"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#1F6BFF"/>
+        <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#174FCC"/>
+        <SolidColorBrush x:Key="TextStrongBrush" Color="#0F172A"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#5B6472"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="#117A4A"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="#B45309"/>
 
-        <Border Grid.Row="0" Padding="14" CornerRadius="8" BorderBrush="#D0D0D0" BorderThickness="1" Margin="0,0,0,12">
-            <StackPanel>
-                <TextBlock Text="Win Apps Migrator" FontSize="24" FontWeight="SemiBold"/>
-                <TextBlock Name="VersionTextBlock" Margin="0,4,0,0" Foreground="#666666"/>
-                <TextBlock Margin="0,6,0,0" TextWrapping="Wrap"
-                           Text="Back up selected application state into one ZIP, then restore it on a fresh Windows install. This build uses rule packs, reinstall-aware restore, and profile-first migration for apps that can realistically be moved." />
-            </StackPanel>
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="18" ShadowDepth="0" Opacity="0.08"/>
+
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource StrokeBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="24"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="14">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Foreground" Value="{StaticResource TextStrongBrush}"/>
+            <Setter Property="Background" Value="#EEF2F7"/>
+        </Style>
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Margin" Value="0,0,10,10"/>
+        </Style>
+
+        <Style x:Key="RoundedTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D6DDE6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border CornerRadius="16"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="CheckBox">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{StaticResource TextStrongBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="AppCardItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,0,14"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemBorder"
+                                Background="White"
+                                BorderBrush="#E7ECF2"
+                                BorderThickness="1"
+                                CornerRadius="22"
+                                Padding="18">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#CBD5E1"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#8BB4FF"/>
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#F8FBFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="340"/>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="84"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="74" Height="74" CornerRadius="22" Background="#0F172A" VerticalAlignment="Top">
+                            <Viewbox Margin="12">
+                                <Canvas Width="54" Height="54">
+                                    <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#66B0FF" Canvas.Left="2" Canvas.Top="2"/>
+                                    <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#2F7DFF" Canvas.Left="28" Canvas.Top="2"/>
+                                    <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#1A5DFF" Canvas.Left="2" Canvas.Top="28"/>
+                                    <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#B7D2FF" Canvas.Left="31" Canvas.Top="23" RenderTransformOrigin="0.5,0.5">
+                                        <Rectangle.RenderTransform>
+                                            <RotateTransform Angle="18"/>
+                                        </Rectangle.RenderTransform>
+                                    </Rectangle>
+                                </Canvas>
+                            </Viewbox>
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="8,2,0,0">
+                            <TextBlock Text="Win Apps Migrator" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}" TextWrapping="Wrap"/>
+                            <TextBlock Name="VersionTextBlock" Margin="0,8,0,0" Foreground="#1D4ED8" FontWeight="SemiBold"/>
+                            <TextBlock Name="AuthorTextBlock" Margin="0,4,0,0" Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Margin="0,22,0,0" CornerRadius="20" Background="#F8FAFD" BorderBrush="#E8EEF6" BorderThickness="1" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="Overview" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}"/>
+                            <TextBlock Name="SummaryTextBlock" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{StaticResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Margin="0,22,0,0">
+                    <TextBlock Text="Actions" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}" Margin="0,0,0,12"/>
+                    <Button Name="ScanButton" Style="{StaticResource PrimaryButtonStyle}" Click="ScanButton_Click">Scan installed apps</Button>
+                    <Button Name="BackupButton" Style="{StaticResource PrimaryButtonStyle}" Click="BackupButton_Click">Back up selected</Button>
+                    <Button Name="RestoreButton" Style="{StaticResource SecondaryButtonStyle}" Click="RestoreButton_Click">Restore backup ZIP</Button>
+                </StackPanel>
+
+                <Border Grid.Row="2" Margin="0,22,0,0" CornerRadius="20" Background="#FBFCFE" BorderBrush="#E7ECF2" BorderThickness="1" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="Selection" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}"/>
+                        <WrapPanel Margin="0,14,0,0">
+                            <Button Name="SelectSupportedButton" Width="132" Style="{StaticResource SecondaryButtonStyle}" Click="SelectSupportedButton_Click">Select supported</Button>
+                            <Button Name="ClearSelectionButton" Width="118" Margin="0,0,0,10" Style="{StaticResource SecondaryButtonStyle}" Click="ClearSelectionButton_Click">Clear</Button>
+                        </WrapPanel>
+                        <CheckBox Name="SupportedOnlyCheckBox" Margin="0,6,0,0" Checked="FilterChanged" Unchecked="FilterChanged" Content="Show supported only"/>
+                        <CheckBox Name="UseWingetCheckBox" Margin="0,10,0,0" IsChecked="True" Content="Use WinGet reinstall during restore"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="3" Margin="0,22,0,0" CornerRadius="20" Background="#FBFCFE" BorderBrush="#E7ECF2" BorderThickness="1" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="Links" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}"/>
+                        <Button Name="UpdateButton" Margin="0,14,0,10" Style="{StaticResource SecondaryButtonStyle}" Click="UpdateButton_Click">Check updates</Button>
+                        <Button Name="ProjectButton" Margin="0" Style="{StaticResource SecondaryButtonStyle}" Click="ProjectButton_Click">Open project page</Button>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="4" Margin="0,22,0,0" CornerRadius="20" Background="#0F172A" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="Tips" Foreground="White" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,12,0,0" Foreground="#D3DAE6" TextWrapping="Wrap"
+                                   Text="Close browsers, sync clients, editors, Adobe apps, and game launchers before backup or restore for the cleanest result."/>
+                        <TextBlock Margin="0,12,0,0" Foreground="#D3DAE6" TextWrapping="Wrap"
+                                   Text="Complex software is safest when reinstalled first, then profile data and settings are restored over the new install."/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="5" Margin="0,20,0,0" CornerRadius="18" Background="#F8FAFD" BorderBrush="#E7ECF2" BorderThickness="1" Padding="14">
+                    <TextBlock Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"
+                               Text="Designed for profile and settings migration with visibility into support level, rule confidence, and restore strategy."/>
+                </Border>
+            </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Column="2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <DockPanel Grid.Row="0" Margin="0,0,0,10">
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Name="ScanButton" Width="150" Height="34" Margin="0,0,8,0" Click="ScanButton_Click">Scan Installed Apps</Button>
-                    <Button Name="SelectSupportedButton" Width="130" Height="34" Margin="0,0,8,0" Click="SelectSupportedButton_Click">Select Supported</Button>
-                    <Button Name="ClearSelectionButton" Width="100" Height="34" Margin="0,0,8,0" Click="ClearSelectionButton_Click">Clear</Button>
-                    <Button Name="BackupButton" Width="150" Height="34" Margin="0,0,8,0" Click="BackupButton_Click">Backup Selected</Button>
-                    <Button Name="RestoreButton" Width="150" Height="34" Margin="0,0,8,0" Click="RestoreButton_Click">Restore Backup ZIP</Button>
-                </StackPanel>
+            <Border Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,0,0,18">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <CheckBox Name="UseWingetCheckBox" VerticalAlignment="Center" Margin="16,0,12,0"
-                              Content="Attempt WinGet reinstall on restore" IsChecked="True"/>
-                    <TextBlock Name="SummaryTextBlock" VerticalAlignment="Center" FontWeight="SemiBold" />
-                </StackPanel>
-            </DockPanel>
+                    <StackPanel>
+                        <TextBlock Text="Library" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}"/>
+                        <TextBlock Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Review detected apps, search the catalog, and choose what to migrate."/>
+                    </StackPanel>
 
-            <DataGrid Name="AppsDataGrid"
-                      Grid.Row="1"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      IsReadOnly="False"
-                      SelectionMode="Extended"
-                      GridLinesVisibility="Horizontal"
-                      HeadersVisibility="Column"
-                      RowHeaderWidth="0">
-                <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Pick" Binding="{Binding IsSelected, Mode=TwoWay}" Width="60"/>
-                    <DataGridTextColumn Header="App" Binding="{Binding DisplayName}" Width="250"/>
-                    <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="100"/>
-                    <DataGridTextColumn Header="Publisher" Binding="{Binding Publisher}" Width="190"/>
-                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="130"/>
-                    <DataGridTextColumn Header="Strategy" Binding="{Binding RestoreStrategy}" Width="210"/>
-                    <DataGridCheckBoxColumn Header="Supported" Binding="{Binding Supported}" Width="85"/>
-                    <DataGridTextColumn Header="Confidence" Binding="{Binding Confidence, StringFormat={}{0:F2}}" Width="90"/>
-                    <DataGridTextColumn Header="Install Location" Binding="{Binding InstallLocation}" Width="290"/>
-                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="360"/>
-                </DataGrid.Columns>
-            </DataGrid>
+                    <Grid Grid.Column="1" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="340"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Name="SearchTextBox" Grid.Column="0" Style="{StaticResource RoundedTextBoxStyle}" TextChanged="SearchTextBox_TextChanged" ToolTip="Search by app, publisher, category, or location"/>
+                        <Border Grid.Column="2" Background="#EEF4FF" CornerRadius="16" Padding="14,10">
+                            <TextBlock Text="Search updates live" Foreground="#3359B8" FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,18">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="220"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Name="ProgressStageTextBlock" FontWeight="SemiBold" FontSize="18" Foreground="{StaticResource TextStrongBrush}" Text="Ready"/>
+                        <TextBlock Name="ProgressMessageTextBlock" Margin="0,8,0,14" Foreground="{StaticResource TextMutedBrush}" Text="Close selected apps before backup or restore for best results." TextWrapping="Wrap"/>
+                        <ProgressBar Name="OperationProgressBar" Minimum="0" Maximum="100" Height="14" Value="0" Background="#E6ECF5" Foreground="{StaticResource PrimaryBrush}"/>
+                    </StackPanel>
+
+                    <Border Grid.Column="1" Margin="18,0,0,0" CornerRadius="18" Background="#F8FAFD" BorderBrush="#E7ECF2" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Current app" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Name="CurrentAppTextBlock" Margin="0,8,0,0" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource TextStrongBrush}" Text="—" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Margin="18,0,0,0" CornerRadius="18" Background="#F8FAFD" BorderBrush="#E7ECF2" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="Transfer" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Name="TransferStatsTextBlock" Margin="0,8,0,0" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource TextStrongBrush}" Text="0 MB / 0 MB"/>
+                            <TextBlock Name="EtaTextBlock" Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}" Text="ETA: --"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="2" Style="{StaticResource CardStyle}">
+                <TabControl Background="Transparent" BorderThickness="0">
+                    <TabItem Header="Apps">
+                        <Grid Margin="0,14,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" CornerRadius="18" Background="#F8FAFD" BorderBrush="#E7ECF2" BorderThickness="1" Padding="14" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Each app card shows support level, confidence, restore method, and installation path." Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    <Border Grid.Column="1" Background="#EEF4FF" CornerRadius="14" Padding="12,8" Margin="14,0,0,0">
+                                        <TextBlock Foreground="#3359B8" FontWeight="SemiBold" Text="Use the checkbox on each card to include it"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <ListBox Grid.Row="1"
+                                     Name="AppsDataGrid"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     HorizontalContentAlignment="Stretch"
+                                     ItemContainerStyle="{StaticResource AppCardItemStyle}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="58"/>
+                                                <ColumnDefinition Width="84"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="190"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                      VerticalAlignment="Top"
+                                                      HorizontalAlignment="Center"
+                                                      Margin="0,8,0,0"/>
+
+                                            <Border Grid.Column="1" Width="68" Height="68" CornerRadius="22" VerticalAlignment="Top">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#EAF2FF"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Supported}" Value="True">
+                                                                <Setter Property="Background" Value="#DFF7EA"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" FontWeight="SemiBold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#245BC7"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Supported}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#117A4A"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="2" Margin="16,0,18,0">
+                                                <DockPanel LastChildFill="False">
+                                                    <TextBlock Text="{Binding DisplayName}" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}" DockPanel.Dock="Left" TextWrapping="Wrap"/>
+                                                </DockPanel>
+                                                <TextBlock Margin="0,4,0,0" Text="{Binding Publisher}" Foreground="{StaticResource TextMutedBrush}" FontSize="13" TextWrapping="Wrap"/>
+
+                                                <WrapPanel Margin="0,14,0,0">
+                                                    <Border CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#FFF7ED"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Supported}" Value="True">
+                                                                        <Setter Property="Background" Value="#E8FFF1"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock FontWeight="SemiBold">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="Metadata only"/>
+                                                                    <Setter Property="Foreground" Value="#B45309"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Supported}" Value="True">
+                                                                            <Setter Property="Text" Value="Supported"/>
+                                                                            <Setter Property="Foreground" Value="#117A4A"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+
+                                                    <Border Background="#F2F4F7" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                        <TextBlock Text="{Binding Category}" FontWeight="SemiBold" Foreground="#344054"/>
+                                                    </Border>
+
+                                                    <Border Background="#EEF4FF" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                        <TextBlock Text="{Binding Confidence, StringFormat=Confidence {0:P0}}" FontWeight="SemiBold" Foreground="#3359B8"/>
+                                                    </Border>
+
+                                                    <Border Background="#F9F5FF" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                        <TextBlock Text="{Binding RestoreStrategy}" FontWeight="SemiBold" Foreground="#6941C6"/>
+                                                    </Border>
+                                                </WrapPanel>
+
+                                                <TextBlock Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
+                                                    <Run Text="Version: "/>
+                                                    <Run Text="{Binding Version}"/>
+                                                </TextBlock>
+
+                                                <TextBlock Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
+                                                    <Run Text="Install location: "/>
+                                                    <Run Text="{Binding InstallLocation}"/>
+                                                </TextBlock>
+
+                                                <TextBlock Margin="0,8,0,0" Foreground="#475467" TextWrapping="Wrap" Text="{Binding Notes}"/>
+                                            </StackPanel>
+
+                                            <Border Grid.Column="3" CornerRadius="18" Background="#FBFCFE" BorderBrush="#E7ECF2" BorderThickness="1" Padding="14">
+                                                <StackPanel>
+                                                    <TextBlock Text="Quick view" FontWeight="SemiBold" Foreground="{StaticResource TextStrongBrush}"/>
+                                                    <TextBlock Margin="0,12,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
+                                                        <Run Text="Rule: "/>
+                                                        <Run Text="{Binding RuleId}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Margin="0,10,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
+                                                        <Run Text="Publisher: "/>
+                                                        <Run Text="{Binding Publisher}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Margin="0,10,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
+                                                        <Run Text="Package ID: "/>
+                                                        <Run Text="{Binding WingetId}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Activity">
+                        <Grid Margin="0,14,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" CornerRadius="18" Background="#F8FAFD" BorderBrush="#E7ECF2" BorderThickness="1" Padding="14" Margin="0,0,0,14">
+                                <TextBlock Foreground="{StaticResource TextMutedBrush}" Text="Review the live job log for backup, restore, WinGet, and registry activity."/>
+                            </Border>
+                            <TextBox Grid.Row="1"
+                                     Name="LogTextBox"
+                                     IsReadOnly="True"
+                                     VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     Background="#FBFCFE"
+                                     BorderBrush="#E7ECF2"
+                                     BorderThickness="1"
+                                     Padding="16"
+                                     FontFamily="Consolas"/>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Border>
         </Grid>
-
-        <GroupBox Grid.Row="2" Header="Log" Margin="0,12,0,12">
-            <TextBox Name="LogTextBox"
-                     Margin="8"
-                     IsReadOnly="True"
-                     VerticalScrollBarVisibility="Auto"
-                     HorizontalScrollBarVisibility="Auto"
-                     TextWrapping="Wrap"
-                     AcceptsReturn="True"/>
-        </GroupBox>
-
-        <TextBlock Grid.Row="3" Foreground="#666666" TextWrapping="Wrap"
-                   Text="Tip: close browsers and editors before backup or restore. Complex apps with drivers, deep services, licensing, cloud sign-in, or Store packaging still need reinstall-first restore and extra app-specific rules."/>
     </Grid>
 </Window>

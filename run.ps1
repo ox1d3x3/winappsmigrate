@@ -1,2 +1,1 @@
-$ErrorActionPreference = "Stop"
-dotnet run --project .\src\AppMigrator.UI\AppMigrator.UI.csproj
+dotnet run --project (Join-Path $PSScriptRoot "src\AppMigrator.UI\AppMigrator.UI.csproj")

@@ -34,9 +34,26 @@ public sealed class DiscoveredApp : INotifyPropertyChanged
     public bool Supported { get; set; }
     public double Confidence { get; set; }
     public string Notes { get; set; } = string.Empty;
+    public string BadgeText => BuildBadge(DisplayName);
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    private static string BuildBadge(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "WA";
+        }
+
+        var parts = value.Split(' ', '-', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+        {
+            return parts[0].Length >= 2 ? parts[0][..2].ToUpperInvariant() : parts[0].ToUpperInvariant();
+        }
+
+        return string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant();
+    }
 }

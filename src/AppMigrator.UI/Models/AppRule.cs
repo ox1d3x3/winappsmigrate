@@ -13,6 +13,10 @@ public sealed class AppRule
     public string? WingetId { get; set; }
     public bool IncludeInstallLocation { get; set; }
     public List<string> MatchTokens { get; set; } = new();
+    public List<string> MatchDisplayNames { get; set; } = new();
+    public List<string> MatchPublisherTokens { get; set; } = new();
+    public List<string> MatchInstallPathTokens { get; set; } = new();
+    public List<string> ProcessNames { get; set; } = new();
     public List<string> IncludePaths { get; set; } = new();
     public List<string> RegistryKeys { get; set; } = new();
     public List<string> ExcludeGlobs { get; set; } = new();

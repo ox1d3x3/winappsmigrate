@@ -1,0 +1,61 @@
+<Window x:Class="AppMigrator.UI.ProcessRunningPromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Close running app"
+        Height="320"
+        Width="540"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#F4F6F8"
+        WindowStyle="SingleBorderWindow"
+        Icon="Assets/WinAppsMigrator.ico">
+    <Grid Margin="18">
+        <Border CornerRadius="24" Background="White" BorderBrush="#E7ECF2" BorderThickness="1" Padding="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="72"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="60" Height="60" CornerRadius="18" Background="#FFF7ED">
+                        <TextBlock Text="!" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="28" FontWeight="Bold" Foreground="#C2410C"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,2,0,0">
+                        <TextBlock Name="TitleTextBlock" FontSize="24" FontWeight="SemiBold" Foreground="#0F172A" TextWrapping="Wrap"/>
+                        <TextBlock Margin="0,8,0,0" Foreground="#5B6472" Text="Backup and restore are safer after the app has been closed." TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Grid>
+
+                <Border Grid.Row="1" Margin="0,20,0,0" CornerRadius="18" Background="#FBFCFE" BorderBrush="#E7ECF2" BorderThickness="1" Padding="14">
+                    <TextBlock Name="MessageTextBlock" TextWrapping="Wrap" Foreground="#475467"/>
+                </Border>
+
+                <Border Grid.Row="2" Margin="0,14,0,0" CornerRadius="16" Background="#EEF4FF" Padding="12">
+                    <TextBlock Name="CountdownTextBlock" FontWeight="SemiBold" Foreground="#1D4ED8"/>
+                </Border>
+
+                <Grid Grid.Row="3" Margin="0,20,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock VerticalAlignment="Center" Foreground="#5B6472" Text="If nothing is pressed before the timer ends, this app will be skipped."/>
+
+                    <Button Grid.Column="1" Name="RetryButton" Width="110" Height="42" Margin="10,0,8,0" Click="RetryButton_Click" Background="#1F6BFF" Foreground="White" BorderThickness="0" FontWeight="SemiBold">I closed it</Button>
+                    <Button Grid.Column="2" Name="SkipButton" Width="90" Height="42" Margin="0,0,8,0" Click="SkipButton_Click" Background="#EEF2F7" Foreground="#0F172A" BorderThickness="0" FontWeight="SemiBold">Skip</Button>
+                    <Button Grid.Column="3" Name="CancelButtonEx" Width="100" Height="42" Click="CancelButtonEx_Click" Background="#EEF2F7" Foreground="#0F172A" BorderThickness="0" FontWeight="SemiBold">Cancel</Button>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

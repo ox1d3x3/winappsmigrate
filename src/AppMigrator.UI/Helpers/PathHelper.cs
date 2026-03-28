@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using AppMigrator.UI.Models;
 
 namespace AppMigrator.UI.Helpers;
 
@@ -36,6 +37,51 @@ public static class PathHelper
         }
 
         return false;
+    }
+
+    public static string RemapToCurrentMachine(string originalPath, MachineProfile sourceMachine)
+    {
+        if (string.IsNullOrWhiteSpace(originalPath))
+        {
+            return originalPath;
+        }
+
+        var currentUserProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var currentLocalAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var currentRoamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+        var result = originalPath;
+
+        if (!string.IsNullOrWhiteSpace(sourceMachine.UserProfilePath)
+            && result.StartsWith(sourceMachine.UserProfilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = Path.GetRelativePath(sourceMachine.UserProfilePath, result);
+            return Path.Combine(currentUserProfile, relative);
+        }
+
+        if (!string.IsNullOrWhiteSpace(sourceMachine.LocalAppDataPath)
+            && result.StartsWith(sourceMachine.LocalAppDataPath, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = Path.GetRelativePath(sourceMachine.LocalAppDataPath, result);
+            return Path.Combine(currentLocalAppData, relative);
+        }
+
+        if (!string.IsNullOrWhiteSpace(sourceMachine.RoamingAppDataPath)
+            && result.StartsWith(sourceMachine.RoamingAppDataPath, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = Path.GetRelativePath(sourceMachine.RoamingAppDataPath, result);
+            return Path.Combine(currentRoamingAppData, relative);
+        }
+
+        var sourceUserPrefix = $@"C:\Users\{sourceMachine.UserName}\";
+        if (!string.IsNullOrWhiteSpace(sourceMachine.UserName)
+            && result.StartsWith(sourceUserPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = result[sourceUserPrefix.Length..];
+            return Path.Combine(currentUserProfile, relative);
+        }
+
+        return result;
     }
 
     private static bool GlobMatch(string input, string pattern)
