@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Win Apps Migrator v0.0.18"
+        Title="Win Apps Migrator v0.0.19"
         Width="1420"
         Height="840"
         MinWidth="1080"
@@ -305,7 +305,7 @@
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="6"/>
                             <Grid Margin="1" ClipToBounds="True">
-                                <Border x:Name="PART_Track" Background="Transparent" CornerRadius="5"/>>
+                                <Border x:Name="PART_Track" Background="Transparent" CornerRadius="5"/>
                                 <Border x:Name="PART_Indicator"
                                         HorizontalAlignment="Left"
                                         CornerRadius="4">
