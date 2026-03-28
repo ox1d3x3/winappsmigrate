@@ -12,8 +12,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
-using Microsoft.Win32;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Win32;
 
 namespace AppMigrator.UI;
 
@@ -54,7 +54,6 @@ public partial class MainWindow : Window
     {
         var settings = await _userSettingsService.LoadAsync();
         var desiredTheme = string.Equals(settings.Theme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Dark" : "Light";
-        SetThemeSelection(desiredTheme);
         ApplyTheme(desiredTheme);
         _themeLoaded = true;
     }
@@ -80,7 +79,9 @@ public partial class MainWindow : Window
         return app.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)
                || app.Publisher.Contains(search, StringComparison.OrdinalIgnoreCase)
                || app.Category.Contains(search, StringComparison.OrdinalIgnoreCase)
-               || app.RuleId.Contains(search, StringComparison.OrdinalIgnoreCase);
+               || app.RuleId.Contains(search, StringComparison.OrdinalIgnoreCase)
+               || app.RestoreStrategy.Contains(search, StringComparison.OrdinalIgnoreCase)
+               || app.Notes.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 
     private async void ScanButton_Click(object sender, RoutedEventArgs e)
@@ -364,32 +365,17 @@ public partial class MainWindow : Window
         });
     }
 
-    private void ThemeLightRadio_Checked(object sender, RoutedEventArgs e) => ChangeTheme("Light");
-
-    private void ThemeDarkRadio_Checked(object sender, RoutedEventArgs e) => ChangeTheme("Dark");
-
-    private void ChangeTheme(string themeName)
+    private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)
     {
-        ApplyTheme(themeName);
+        var nextTheme = string.Equals(_currentTheme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Light" : "Dark";
+        ApplyTheme(nextTheme);
         if (_themeLoaded)
         {
-            _ = _userSettingsService.SaveAsync(new UserSettings { Theme = themeName });
+            _ = _userSettingsService.SaveAsync(new UserSettings { Theme = nextTheme });
         }
     }
 
     private string GetSelectedTheme() => _currentTheme;
-
-    private void SetThemeSelection(string themeName)
-    {
-        if (string.Equals(themeName, "Dark", StringComparison.OrdinalIgnoreCase))
-        {
-            DarkThemeRadio.IsChecked = true;
-        }
-        else
-        {
-            LightThemeRadio.IsChecked = true;
-        }
-    }
 
     private void ApplyTheme(string themeName)
     {
@@ -407,28 +393,31 @@ public partial class MainWindow : Window
         {
         }
 
-        SetBrush("PageBackgroundBrush", dark ? "#10131A" : "#F4F6FB");
-        SetBrush("ShellBrush", dark ? "#151A22" : "#EDF2FA");
-        SetBrush("SurfaceBrush", dark ? "#1A202B" : "#FFFFFF");
-        SetBrush("SurfaceAltBrush", dark ? "#202A37" : "#F7F9FE");
-        SetBrush("SurfacePopBrush", dark ? "#18202B" : "#FFFFFF");
-        SetBrush("TonalBrush", dark ? "#22324A" : "#E8EEFF");
-        SetBrush("TonalStrongBrush", dark ? "#2A3C58" : "#D9E6FF");
-        SetBrush("StrokeBrush", dark ? "#2F3C4D" : "#D8DFEC");
-        SetBrush("StrokeStrongBrush", dark ? "#475569" : "#C5D1E2");
-        SetBrush("PrimaryBrush", dark ? "#9AB1FF" : "#3F66F1");
-        SetBrush("PrimaryContainerBrush", dark ? "#243554" : "#E4EBFF");
-        SetBrush("SecondaryContainerBrush", dark ? "#213241" : "#E7F3FF");
-        SetBrush("SuccessBrush", dark ? "#7CE0AE" : "#147D52");
-        SetBrush("SuccessContainerBrush", dark ? "#1D3B31" : "#DCF7EA");
-        SetBrush("WarningBrush", dark ? "#FFC06A" : "#B96B00");
-        SetBrush("WarningContainerBrush", dark ? "#3A2B15" : "#FFF1DA");
-        SetBrush("TextStrongBrush", dark ? "#F5F7FB" : "#162033");
+        SetBrush("PageBackgroundBrush", dark ? "#0F131A" : "#F3F6FC");
+        SetBrush("ShellBrush", dark ? "#141A22" : "#EBF0F8");
+        SetBrush("SurfaceBrush", dark ? "#18202A" : "#FFFFFF");
+        SetBrush("SurfaceRaisedBrush", dark ? "#1C2430" : "#FDFEFF");
+        SetBrush("SurfaceAltBrush", dark ? "#202A37" : "#F6F8FC");
+        SetBrush("SurfaceAccentBrush", dark ? "#24334A" : "#EEF2FF");
+        SetBrush("StrokeBrush", dark ? "#314155" : "#D9E1F0");
+        SetBrush("StrokeStrongBrush", dark ? "#425776" : "#C3D0E5");
+        SetBrush("PrimaryBrush", dark ? "#9CB1FF" : "#3B63F2");
+        SetBrush("PrimaryContainerBrush", dark ? "#2A3656" : "#E7EDFF");
+        SetBrush("PrimaryContainerTextBrush", dark ? "#CAD5FF" : "#2746C7");
+        SetBrush("SuccessBrush", dark ? "#88E7B8" : "#157A52");
+        SetBrush("SuccessContainerBrush", dark ? "#1F3D33" : "#DDF6EA");
+        SetBrush("SuccessTextBrush", dark ? "#88E7B8" : "#0E6A45");
+        SetBrush("WarningBrush", dark ? "#FFCA7C" : "#AF6C0F");
+        SetBrush("WarningContainerBrush", dark ? "#45331A" : "#FFF1D9");
+        SetBrush("WarningTextBrush", dark ? "#FFD08F" : "#93580A");
+        SetBrush("TextStrongBrush", dark ? "#F5F7FC" : "#162033");
         SetBrush("TextMutedBrush", dark ? "#B3C0D4" : "#64748B");
-        SetBrush("TextSoftBrush", dark ? "#8F9DB4" : "#91A0B5");
+        SetBrush("TextSoftBrush", dark ? "#91A0B8" : "#93A2BA");
 
         Background = (System.Windows.Media.Brush)Resources["PageBackgroundBrush"];
         LogTextBox.CaretBrush = (System.Windows.Media.Brush)Resources["TextStrongBrush"];
+        ThemeToggleIcon.Kind = dark ? PackIconKind.WhiteBalanceSunny : PackIconKind.WeatherNight;
+        ThemeToggleButton.ToolTip = dark ? "Switch to light theme" : "Switch to dark theme";
     }
 
     private void SetBrush(string resourceKey, string color)
@@ -444,8 +433,7 @@ public partial class MainWindow : Window
         UpdateButton.IsEnabled = !isBusy;
         UpdateButtonTop.IsEnabled = !isBusy;
         ProjectButton.IsEnabled = !isBusy && !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
-        LightThemeRadio.IsEnabled = !isBusy;
-        DarkThemeRadio.IsEnabled = !isBusy;
+        ThemeToggleButton.IsEnabled = !isBusy;
         AppsDataGrid.IsEnabled = !isBusy;
         Mouse.OverrideCursor = isBusy ? Cursors.Wait : null;
     }

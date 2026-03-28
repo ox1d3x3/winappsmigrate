@@ -4,20 +4,20 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="Close running app"
         Width="760"
-        SizeToContent="Height"
-        MinWidth="760"
+        Height="520"
+        MinWidth="660"
+        MinHeight="440"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Style="{StaticResource MaterialDesignWindow}"
-        Background="#F4F6FB"
-        ShowInTaskbar="False">
+        Style="{StaticResource MaterialDesignWindow}">
     <Window.Resources>
-        <DropShadowEffect x:Key="PromptShadow" BlurRadius="26" ShadowDepth="0" Opacity="0.14"/>
+        <DropShadowEffect x:Key="PromptShadow" BlurRadius="28" ShadowDepth="0" Opacity="0.14"/>
+
         <Style x:Key="PromptPrimaryButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="48"/>
             <Setter Property="Padding" Value="18,0"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#3F66F1"/>
+            <Setter Property="Background" Value="#3B63F2"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -25,7 +25,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="18" Effect="{StaticResource PromptShadow}">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="16"
+                                Effect="{StaticResource PromptShadow}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -36,83 +41,94 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="PromptSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PromptPrimaryButtonStyle}">
             <Setter Property="Foreground" Value="#162033"/>
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#D8DFEC"/>
+            <Setter Property="Background" Value="#F6F8FC"/>
+            <Setter Property="BorderBrush" Value="#D9E1F0"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+
         <Style x:Key="PromptTonalButtonStyle" TargetType="Button" BasedOn="{StaticResource PromptPrimaryButtonStyle}">
-            <Setter Property="Foreground" Value="#3F66F1"/>
-            <Setter Property="Background" Value="#E4EBFF"/>
+            <Setter Property="Foreground" Value="#2746C7"/>
+            <Setter Property="Background" Value="#E7EDFF"/>
         </Style>
     </Window.Resources>
 
     <Grid Margin="20">
-        <Border x:Name="ShellBorder" CornerRadius="30" Background="White" BorderBrush="#D8DFEC" BorderThickness="1" Padding="24" Effect="{StaticResource PromptShadow}">
+        <Border x:Name="ShellBorder"
+                Background="White"
+                BorderBrush="#D9E1F0"
+                BorderThickness="1"
+                CornerRadius="28"
+                Padding="24"
+                Effect="{StaticResource PromptShadow}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="20"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="20"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="84"/>
+                        <ColumnDefinition Width="80"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="AlertBadge" Width="72" Height="72" CornerRadius="24" Background="#FFF1DA">
-                        <materialDesign:PackIcon Kind="AlertOutline" Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#B96B00"/>
+                    <Border x:Name="AlertBadge" Width="72" Height="72" CornerRadius="22" Background="#FFF4E6" BorderBrush="#F1E2C9" BorderThickness="1">
+                        <materialDesign:PackIcon Kind="AlertOutline" Width="30" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#AF6C0F"/>
                     </Border>
-                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                        <TextBlock x:Name="TitleTextBlock" FontSize="30" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#162033"/>
-                        <TextBlock x:Name="SubtitleTextBlock" Margin="0,8,0,0" Foreground="#64748B" TextWrapping="Wrap" Text="Close the app, then choose how to continue. If the timer ends first, this app will be skipped automatically."/>
+                    <StackPanel Grid.Column="1" Margin="18,0,0,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="TitleTextBlock" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#162033"/>
+                        <TextBlock x:Name="SubtitleTextBlock" Margin="0,8,0,0" Foreground="#64748B" TextWrapping="Wrap" Text="Close the app, then continue. If the timer finishes first, this app will be skipped automatically."/>
                     </StackPanel>
                 </Grid>
 
-                <Grid Grid.Row="1" Margin="0,22,0,0">
+                <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="240"/>
+                        <ColumnDefinition Width="18"/>
+                        <ColumnDefinition Width="220"/>
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="ProcessesBorder" Background="#F7F9FE" BorderBrush="#D8DFEC" BorderThickness="1" CornerRadius="24" Padding="18">
+                    <Border x:Name="ProcessesBorder" Background="#F6F8FC" BorderBrush="#D9E1F0" BorderThickness="1" CornerRadius="22" Padding="18">
                         <StackPanel>
                             <TextBlock x:Name="ProcessesHeaderTextBlock" Text="Detected running processes" FontWeight="SemiBold" Foreground="#162033"/>
-                            <TextBlock x:Name="MessageTextBlock" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="#4B5B72"/>
+                            <TextBlock x:Name="MessageTextBlock" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="#5A6A82"/>
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="2" x:Name="TimerBorder" Background="#EAF0FF" BorderBrush="#D8DFEC" BorderThickness="1" CornerRadius="24" Padding="18">
+                    <Border Grid.Column="2" x:Name="TimerBorder" Background="#EEF2FF" BorderBrush="#D9E1F0" BorderThickness="1" CornerRadius="22" Padding="18">
                         <StackPanel>
-                            <TextBlock x:Name="TimerHeaderTextBlock" Text="Timer" FontWeight="SemiBold" Foreground="#3F66F1"/>
-                            <TextBlock x:Name="CountdownTextBlock" Margin="0,10,0,0" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#3F66F1"/>
-                            <TextBlock x:Name="HelpTextBlock" Margin="0,16,0,0" Foreground="#64748B" TextWrapping="Wrap" Text="Best results come from closing browsers, sync clients, editors, and Adobe apps before backup or restore."/>
+                            <TextBlock x:Name="TimerHeaderTextBlock" Text="Timer" FontWeight="SemiBold" Foreground="#2746C7"/>
+                            <TextBlock x:Name="CountdownTextBlock" Margin="0,12,0,0" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#2746C7"/>
+                            <TextBlock x:Name="HelpTextBlock" Margin="0,14,0,0" Foreground="#64748B" TextWrapping="Wrap" Text="Close browsers, sync clients, editors, and Adobe apps before backup or restore."/>
                         </StackPanel>
                     </Border>
                 </Grid>
 
-                <Border Grid.Row="2" Margin="0,18,0,0" Background="#F7F9FE" BorderBrush="#D8DFEC" BorderThickness="1" CornerRadius="20" Padding="14">
-                    <TextBlock x:Name="PromptNoteTextBlock" Foreground="#64748B" TextWrapping="Wrap" Text="Use Continue after close once the process is gone. Use Skip app to move forward without this app, or Cancel job to stop the current operation."/>
+                <Border Grid.Row="4" x:Name="PromptNoteBorder" Background="#F9FBFF" BorderBrush="#D9E1F0" BorderThickness="1" CornerRadius="22" Padding="18">
+                    <StackPanel>
+                        <TextBlock x:Name="PromptNoteTextBlock" Foreground="#64748B" TextWrapping="Wrap" Text="Continue after close when the process is gone. Skip app moves on without this app. Cancel job stops the current backup or restore."/>
+                        <TextBlock x:Name="ActionHintTextBlock" Margin="0,12,0,0" Foreground="#93A2BA" TextWrapping="Wrap" Text="Buttons stay visible below so you do not have to wait for the timer."/>
+                    </StackPanel>
                 </Border>
 
-                <Grid Grid.Row="3" Margin="0,22,0,0">
+                <Grid Grid.Row="6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="210"/>
                         <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="190"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="#D8DFEC" BorderThickness="1" CornerRadius="18" Padding="14">
-                        <TextBlock x:Name="ActionHintTextBlock" Foreground="#64748B" Text="Buttons stay visible here so you can continue, skip, or cancel without waiting for the timer."/>
-                    </Border>
-                    <Button x:Name="RetryButton" Grid.Column="2" Style="{StaticResource PromptPrimaryButtonStyle}" Click="RetryButton_Click">Continue after close</Button>
+                    <Button x:Name="CancelButtonEx" Grid.Column="0" Style="{StaticResource PromptSecondaryButtonStyle}" Click="CancelButtonEx_Click">Cancel job</Button>
                     <Button x:Name="SkipButton" Grid.Column="4" Style="{StaticResource PromptTonalButtonStyle}" Click="SkipButton_Click">Skip app</Button>
-                    <Button x:Name="CancelButtonEx" Grid.Column="6" Style="{StaticResource PromptSecondaryButtonStyle}" Click="CancelButtonEx_Click">Cancel job</Button>
+                    <Button x:Name="RetryButton" Grid.Column="6" Style="{StaticResource PromptPrimaryButtonStyle}" Click="RetryButton_Click">Continue after close</Button>
                 </Grid>
             </Grid>
         </Border>
