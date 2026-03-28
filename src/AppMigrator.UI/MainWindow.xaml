@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Win Apps Migrator v0.0.12"
+        Title="Win Apps Migrator v0.0.13"
         Width="1500"
         Height="920"
         MinWidth="1080"
@@ -222,59 +222,30 @@
                         <Border Style="{StaticResource HeroCardStyle}" Margin="0,0,0,16">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="96"/>
+                                    <ColumnDefinition Width="112"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Width="88"
-                                        Height="88"
+                                <Border Width="96"
+                                        Height="96"
                                         Background="{DynamicResource SurfaceBrush}"
                                         BorderBrush="{DynamicResource StrokeBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="26">
-                                    <Grid Margin="14">
-                                        <Grid Width="40" Height="40" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0,6,6,0">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition/>
-                                                <RowDefinition/>
-                                            </Grid.RowDefinitions>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition/>
-                                                <ColumnDefinition/>
-                                            </Grid.ColumnDefinitions>
-                                            <Rectangle Grid.Row="0" Grid.Column="0" Margin="0,0,4,4" RadiusX="5" RadiusY="5" Fill="{DynamicResource PrimaryBrush}"/>
-                                            <Rectangle Grid.Row="0" Grid.Column="1" Margin="4,0,0,4" RadiusX="5" RadiusY="5" Fill="#6FA2FF"/>
-                                            <Rectangle Grid.Row="1" Grid.Column="0" Margin="0,4,4,0" RadiusX="5" RadiusY="5" Fill="#2458EA"/>
-                                            <Rectangle Grid.Row="1" Grid.Column="1" Margin="4,4,0,0" RadiusX="5" RadiusY="5" Fill="#A2C0FF"/>
-                                        </Grid>
-                                        <Canvas Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Top">
-                                            <Polygon Points="17,0 31,8 17,16 3,8" Fill="#86AEFF"/>
-                                            <Polygon Points="3,8 17,16 17,30 3,22" Fill="#5A83F8"/>
-                                            <Polygon Points="31,8 17,16 17,30 31,22" Fill="#D1E0FF"/>
-                                        </Canvas>
-                                        <Path Data="M24,16 C29,10 36,8 42,10"
-                                              Stroke="{DynamicResource PrimaryBrush}"
-                                              StrokeThickness="2.6"
-                                              Stretch="None"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Top"
-                                              Margin="10,4,0,0"/>
-                                        <Path Data="M0,0 L6,0 L3,-5 Z"
-                                              Fill="{DynamicResource PrimaryBrush}"
-                                              Stretch="None"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Top"
-                                              Margin="0,5,10,0"/>
-                                    </Grid>
+                                        CornerRadius="28"
+                                        Padding="10">
+                                    <Image Source="Assets/WinAppsMigrator_logo.png"
+                                           Stretch="Uniform"
+                                           SnapsToDevicePixels="True"
+                                           RenderOptions.BitmapScalingMode="HighQuality"/>
                                 </Border>
 
-                                <StackPanel Grid.Column="1" Margin="18,0,0,0" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
                                     <TextBlock Text="Win Apps Migrator"
                                                FontSize="27"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextStrongBrush}"/>
                                     <TextBlock Margin="0,6,0,0"
-                                               Text="Material 3 refresh for smoother Windows app backup and restore."
+                                               Text="Back up and restore supported Windows apps with a cleaner, more reliable migration flow."
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                TextWrapping="Wrap"/>
                                     <TextBlock x:Name="VersionTextBlock"
@@ -722,7 +693,7 @@
                                                                            Foreground="{DynamicResource TextMutedBrush}"
                                                                            TextWrapping="Wrap"/>
                                                                 <WrapPanel Margin="0,16,0,0">
-                                                                    <Border Style="{StaticResource ChipBorderStyle}">
+                                                                    <Border>
                                                                         <Border.Style>
                                                                             <Style TargetType="Border" BasedOn="{StaticResource ChipBorderStyle}">
                                                                                 <Setter Property="Background" Value="{DynamicResource WarningContainerBrush}"/>
