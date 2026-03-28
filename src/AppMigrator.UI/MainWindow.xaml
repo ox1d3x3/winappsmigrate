@@ -4,39 +4,41 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Win Apps Migrator V0.0.8"
-        Height="940"
-        Width="1580"
-        MinHeight="860"
-        MinWidth="1400"
+        Title="Win Apps Migrator V0.0.9"
+        Height="960"
+        Width="1600"
+        MinHeight="880"
+        MinWidth="1420"
         Background="{DynamicResource PageBackgroundBrush}"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
-        <SolidColorBrush x:Key="PageBackgroundBrush" Color="#F4F6FB"/>
-        <SolidColorBrush x:Key="SidebarBrush" Color="#FAFBFF"/>
+        <SolidColorBrush x:Key="PageBackgroundBrush" Color="#F6F8FE"/>
+        <SolidColorBrush x:Key="SidebarBrush" Color="#F9FBFF"/>
         <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFFFF"/>
         <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#FFFFFFFF"/>
-        <SolidColorBrush x:Key="AccentSurfaceBrush" Color="#F3F7FF"/>
-        <SolidColorBrush x:Key="SoftSurfaceBrush" Color="#F8FAFD"/>
-        <SolidColorBrush x:Key="StrokeBrush" Color="#DFE6F0"/>
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#2E6BFF"/>
-        <SolidColorBrush x:Key="PrimarySoftBrush" Color="#EAF1FF"/>
-        <SolidColorBrush x:Key="SuccessBrush" Color="#157A52"/>
-        <SolidColorBrush x:Key="WarningBrush" Color="#B45309"/>
-        <SolidColorBrush x:Key="TextStrongBrush" Color="#101828"/>
-        <SolidColorBrush x:Key="TextMutedBrush" Color="#667085"/>
-        <SolidColorBrush x:Key="TextSoftBrush" Color="#98A2B3"/>
-        <SolidColorBrush x:Key="ThemeChipBrush" Color="#EEF3FC"/>
+        <SolidColorBrush x:Key="AccentSurfaceBrush" Color="#EEF2FF"/>
+        <SolidColorBrush x:Key="SoftSurfaceBrush" Color="#F1F4FB"/>
+        <SolidColorBrush x:Key="SoftSurfaceAltBrush" Color="#F7F4FF"/>
+        <SolidColorBrush x:Key="StrokeBrush" Color="#D9E0EE"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#4F46E5"/>
+        <SolidColorBrush x:Key="PrimarySoftBrush" Color="#ECECFF"/>
+        <SolidColorBrush x:Key="SecondaryBrush" Color="#0EA5E9"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="#198754"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="#C77700"/>
+        <SolidColorBrush x:Key="TextStrongBrush" Color="#172033"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#5C6A82"/>
+        <SolidColorBrush x:Key="TextSoftBrush" Color="#8A95AB"/>
 
-        <DropShadowEffect x:Key="SectionShadow" BlurRadius="26" ShadowDepth="0" Opacity="0.13"/>
-        <DropShadowEffect x:Key="CardShadow" BlurRadius="20" ShadowDepth="0" Opacity="0.1"/>
+        <DropShadowEffect x:Key="ShellShadow" BlurRadius="32" ShadowDepth="0" Opacity="0.10"/>
+        <DropShadowEffect x:Key="SectionShadow" BlurRadius="24" ShadowDepth="0" Opacity="0.09"/>
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="18" ShadowDepth="0" Opacity="0.08"/>
 
         <Style x:Key="SectionCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="28"/>
-            <Setter Property="Padding" Value="20"/>
+            <Setter Property="CornerRadius" Value="30"/>
+            <Setter Property="Padding" Value="22"/>
             <Setter Property="Effect" Value="{StaticResource SectionShadow}"/>
         </Style>
 
@@ -45,9 +47,9 @@
         </Style>
 
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="48"/>
+            <Setter Property="Height" Value="52"/>
             <Setter Property="Padding" Value="18,0"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
@@ -58,7 +60,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="RootBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="18" Effect="{StaticResource CardShadow}">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="20"
+                                Effect="{StaticResource CardShadow}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -69,7 +76,7 @@
                                 <Setter TargetName="RootBorder" Property="Opacity" Value="0.86"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="RootBorder" Property="Opacity" Value="0.55"/>
+                                <Setter TargetName="RootBorder" Property="Opacity" Value="0.50"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -79,18 +86,19 @@
 
         <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
             <Setter Property="Foreground" Value="{DynamicResource TextStrongBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource SoftSurfaceBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
-        <Style x:Key="GhostButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+        <Style x:Key="TonalButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
             <Setter Property="Background" Value="{DynamicResource PrimarySoftBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
         </Style>
 
         <Style x:Key="RoundedTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Height" Value="48"/>
+            <Setter Property="Height" Value="52"/>
             <Setter Property="Padding" Value="16,0"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Foreground" Value="{DynamicResource TextStrongBrush}"/>
@@ -101,28 +109,68 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border CornerRadius="18" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Effect="{StaticResource CardShadow}">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                        <Border x:Name="TextBorder"
+                                CornerRadius="22"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Effect="{StaticResource CardShadow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="52"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="⌕"
+                                           FontSize="18"
+                                           Foreground="{DynamicResource TextSoftBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                                <ScrollViewer Grid.Column="1" x:Name="PART_ContentHost" Margin="0"/>
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="TextBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <Style x:Key="RoundedComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Height" Value="44"/>
-            <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextStrongBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource StrokeBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
         <Style x:Key="ModernCheckBoxStyle" TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
-            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="Margin" Value="0,10,0,0"/>
             <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style x:Key="ThemeToggleStyle" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Root"
+                                Padding="12,10"
+                                Background="Transparent"
+                                CornerRadius="18"
+                                BorderBrush="Transparent"
+                                BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource SoftSurfaceBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource PrimarySoftBrush}"/>
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="ModernTabControlStyle" TargetType="TabControl">
@@ -136,7 +184,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <TabPanel Grid.Row="0" Margin="0,0,0,16" IsItemsHost="True" Background="Transparent"/>
+                            <TabPanel Grid.Row="0" Margin="0,0,0,18" IsItemsHost="True" Background="Transparent"/>
                             <ContentPresenter Grid.Row="1" ContentSource="SelectedContent"/>
                         </Grid>
                     </ControlTemplate>
@@ -147,12 +195,17 @@
         <Style x:Key="ModernTabItemStyle" TargetType="TabItem">
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
-            <Setter Property="Padding" Value="18,11"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="Padding" Value="20,11"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="TabBorder" Background="{DynamicResource SoftSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="18" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="TabBorder"
+                                Background="{DynamicResource SoftSurfaceBrush}"
+                                BorderBrush="{DynamicResource StrokeBrush}"
+                                BorderThickness="1"
+                                CornerRadius="18"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" ContentSource="Header"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -178,301 +231,355 @@
     </Window.Resources>
 
     <Grid Margin="18">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="350"/>
-            <ColumnDefinition Width="20"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Border Background="{DynamicResource PageBackgroundBrush}" CornerRadius="36" Effect="{StaticResource ShellShadow}">
+            <Grid Margin="18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="350"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Style="{StaticResource SidebarCardStyle}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                <Border Grid.Column="0" Style="{StaticResource SidebarCardStyle}" Padding="18">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="92"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Border Width="80" Height="80" CornerRadius="24" Background="#0F172A" VerticalAlignment="Top">
-                        <Viewbox Margin="12">
-                            <Canvas Width="54" Height="54">
-                                <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#66B0FF" Canvas.Left="2" Canvas.Top="2"/>
-                                <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#2F7DFF" Canvas.Left="28" Canvas.Top="2"/>
-                                <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#1A5DFF" Canvas.Left="2" Canvas.Top="28"/>
-                                <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#C5D8FF" Canvas.Left="31" Canvas.Top="23" RenderTransformOrigin="0.5,0.5">
-                                    <Rectangle.RenderTransform>
-                                        <RotateTransform Angle="18"/>
-                                    </Rectangle.RenderTransform>
-                                </Rectangle>
-                            </Canvas>
-                        </Viewbox>
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="8,4,0,0">
-                        <TextBlock Text="Win Apps&#x0a;Migrator" FontSize="27" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <TextBlock x:Name="VersionTextBlock" Margin="0,10,0,0" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="AuthorTextBlock" Margin="0,4,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
-                    </StackPanel>
-                </Grid>
+                        <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="28" Padding="18" Effect="{StaticResource CardShadow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="82"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="74" Height="74" CornerRadius="22" Background="#0F172A" VerticalAlignment="Top">
+                                    <Viewbox Margin="11">
+                                        <Canvas Width="54" Height="54">
+                                            <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#66B0FF" Canvas.Left="2" Canvas.Top="2"/>
+                                            <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#2F7DFF" Canvas.Left="28" Canvas.Top="2"/>
+                                            <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#1A5DFF" Canvas.Left="2" Canvas.Top="28"/>
+                                            <Rectangle Width="20" Height="20" RadiusX="4" RadiusY="4" Fill="#C5D8FF" Canvas.Left="31" Canvas.Top="23" RenderTransformOrigin="0.5,0.5">
+                                                <Rectangle.RenderTransform>
+                                                    <RotateTransform Angle="18"/>
+                                                </Rectangle.RenderTransform>
+                                            </Rectangle>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="16,2,0,0">
+                                    <TextBlock Text="Win Apps&#x0a;Migrator" FontSize="26" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                    <TextBlock x:Name="VersionTextBlock" Margin="0,10,0,0" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="AuthorTextBlock" Margin="0,4,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
 
-                <Border Grid.Row="1" Margin="0,22,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
-                    <StackPanel>
-                        <TextBlock Text="Overview" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <TextBlock x:Name="SummaryTextBlock" Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-                    </StackPanel>
+                        <Border Grid.Row="1" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Overview" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                <TextBlock x:Name="SummaryTextBlock" Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="2" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Actions" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                <Button x:Name="ScanButton" Margin="0,16,0,12" Style="{StaticResource PrimaryButtonStyle}" Click="ScanButton_Click">Scan installed apps</Button>
+                                <Button x:Name="BackupButton" Style="{StaticResource PrimaryButtonStyle}" Click="BackupButton_Click">Back up selected</Button>
+                                <Button x:Name="RestoreButton" Margin="0,0,0,0" Style="{StaticResource SecondaryButtonStyle}" Click="RestoreButton_Click">Restore backup ZIP</Button>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="3" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Selection" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="SelectSupportedButton" Grid.Column="0" Margin="0" Style="{StaticResource TonalButtonStyle}" Click="SelectSupportedButton_Click">Select supported</Button>
+                                    <Button x:Name="ClearSelectionButton" Grid.Column="2" Margin="0" Style="{StaticResource SecondaryButtonStyle}" Click="ClearSelectionButton_Click">Clear</Button>
+                                </Grid>
+                                <CheckBox x:Name="SupportedOnlyCheckBox" Style="{StaticResource ModernCheckBoxStyle}" Checked="FilterChanged" Unchecked="FilterChanged">Show supported only</CheckBox>
+                                <CheckBox x:Name="UseWingetCheckBox" Style="{StaticResource ModernCheckBoxStyle}" IsChecked="True">Install missing apps with WinGet during restore</CheckBox>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="4" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Appearance" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                <TextBlock Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="Choose the interface theme."/>
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <RadioButton x:Name="LightThemeRadio" Grid.Column="0" GroupName="ThemeSwitch" Style="{StaticResource ThemeToggleStyle}" Checked="ThemeLightRadio_Checked">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="☀" FontSize="16" Margin="0,0,8,0" Foreground="{DynamicResource PrimaryBrush}"/>
+                                            <TextBlock Text="Light" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                        </StackPanel>
+                                    </RadioButton>
+                                    <RadioButton x:Name="DarkThemeRadio" Grid.Column="2" GroupName="ThemeSwitch" Style="{StaticResource ThemeToggleStyle}" Checked="ThemeDarkRadio_Checked">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="☾" FontSize="16" Margin="0,0,8,0" Foreground="{DynamicResource PrimaryBrush}"/>
+                                            <TextBlock Text="Dark" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                        </StackPanel>
+                                    </RadioButton>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="5" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Builds" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                <Button x:Name="UpdateButton" Margin="0,14,0,10" Style="{StaticResource TonalButtonStyle}" Click="UpdateButton_Click">Check latest build</Button>
+                                <Button x:Name="ProjectButton" Margin="0" Style="{StaticResource SecondaryButtonStyle}" Click="ProjectButton_Click">Open releases page</Button>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="6" Margin="0,18,0,0" Background="{DynamicResource PrimaryBrush}" CornerRadius="26" Padding="18" Effect="{StaticResource CardShadow}">
+                            <StackPanel>
+                                <TextBlock Text="Tips" FontWeight="SemiBold" Foreground="White"/>
+                                <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Foreground="#EEF3FF" Text="Close browsers, Adobe apps, editors, and sync clients before backup or restore. Review the backup and restore reports after each job to confirm verification results."/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </Border>
 
-                <Border Grid.Row="2" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
-                    <StackPanel>
-                        <TextBlock Text="Actions" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <Button x:Name="ScanButton" Margin="0,16,0,10" Style="{StaticResource PrimaryButtonStyle}" Click="ScanButton_Click">Scan installed apps</Button>
-                        <Button x:Name="BackupButton" Style="{StaticResource PrimaryButtonStyle}" Click="BackupButton_Click">Back up selected</Button>
-                        <Button x:Name="RestoreButton" Margin="0,0,0,0" Style="{StaticResource SecondaryButtonStyle}" Click="RestoreButton_Click">Restore backup ZIP</Button>
-                    </StackPanel>
-                </Border>
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                <Border Grid.Row="3" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
-                    <StackPanel>
-                        <TextBlock Text="Selection" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <Grid Margin="0,14,0,0">
+                    <Border Grid.Row="0" Style="{StaticResource SectionCardStyle}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="360"/>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="190"/>
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="SelectSupportedButton" Grid.Column="0" Style="{StaticResource SecondaryButtonStyle}" Click="SelectSupportedButton_Click">Select supported</Button>
-                            <Button x:Name="ClearSelectionButton" Grid.Column="2" Margin="0" Style="{StaticResource SecondaryButtonStyle}" Click="ClearSelectionButton_Click">Clear</Button>
+                            <StackPanel>
+                                <TextBlock Text="Library" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                <TextBlock Margin="0,6,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="Material-inspired layout with cleaner surfaces, stronger separation, and app-first selection."/>
+                            </StackPanel>
+                            <TextBox Grid.Column="1" x:Name="SearchTextBox" Style="{StaticResource RoundedTextBoxStyle}" TextChanged="SearchTextBox_TextChanged"/>
+                            <Button Grid.Column="3" x:Name="UpdateButtonTop" Margin="0" Style="{StaticResource TonalButtonStyle}" Click="UpdateButton_Click">Check latest build</Button>
                         </Grid>
-                        <CheckBox x:Name="SupportedOnlyCheckBox" Style="{StaticResource ModernCheckBoxStyle}" Checked="FilterChanged" Unchecked="FilterChanged">Show supported only</CheckBox>
-                        <CheckBox x:Name="UseWingetCheckBox" Style="{StaticResource ModernCheckBoxStyle}" IsChecked="True">Install missing apps with WinGet during restore</CheckBox>
-                    </StackPanel>
-                </Border>
+                    </Border>
 
-                <Border Grid.Row="4" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
-                    <StackPanel>
-                        <TextBlock Text="Appearance" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <TextBlock Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="Switch between light and dark themes."/>
-                        <ComboBox x:Name="ThemeComboBox" Margin="0,14,0,0" Style="{StaticResource RoundedComboBoxStyle}" SelectionChanged="ThemeComboBox_SelectionChanged">
-                            <ComboBoxItem Content="Light"/>
-                            <ComboBoxItem Content="Dark"/>
-                        </ComboBox>
-                    </StackPanel>
-                </Border>
+                    <Border Grid.Row="1" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="220"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock x:Name="ProgressStageTextBlock" Text="Ready" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                <TextBlock x:Name="ProgressMessageTextBlock" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="Close selected apps before backup or restore for best results." TextWrapping="Wrap"/>
+                                <Border Margin="0,18,0,0" Background="{DynamicResource SoftSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="16" Padding="4">
+                                    <ProgressBar x:Name="OperationProgressBar"
+                                                 Height="18"
+                                                 Minimum="0"
+                                                 Maximum="100"
+                                                 Value="0"
+                                                 Background="Transparent"
+                                                 Foreground="{DynamicResource PrimaryBrush}"
+                                                 BorderThickness="0"/>
+                                </Border>
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="{DynamicResource AccentSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="24" Padding="16" Effect="{StaticResource CardShadow}">
+                                <StackPanel>
+                                    <TextBlock Text="Current app" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock x:Name="CurrentAppTextBlock" Margin="0,10,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}" Text="—" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="3" Background="{DynamicResource AccentSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="24" Padding="16" Effect="{StaticResource CardShadow}">
+                                <StackPanel>
+                                    <TextBlock Text="Transfer" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock x:Name="TransferStatsTextBlock" Margin="0,10,0,0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}" Text="0 MB / 0 MB" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="EtaTextBlock" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="ETA: --" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
 
-                <Border Grid.Row="5" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}" Padding="16">
-                    <StackPanel>
-                        <TextBlock Text="Links" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <Button x:Name="UpdateButton" Margin="0,14,0,10" Style="{StaticResource GhostButtonStyle}" Click="UpdateButton_Click">Check latest build</Button>
-                        <Button x:Name="ProjectButton" Margin="0" Style="{StaticResource SecondaryButtonStyle}" Click="ProjectButton_Click">Open releases page</Button>
-                    </StackPanel>
-                </Border>
+                    <Border Grid.Row="2" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}">
+                        <TabControl Style="{StaticResource ModernTabControlStyle}">
+                            <TabItem Header="Apps" Style="{StaticResource ModernTabItemStyle}">
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" Background="{DynamicResource SoftSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="20" Padding="16" Margin="0,0,0,16">
+                                        <DockPanel>
+                                            <StackPanel DockPanel.Dock="Left">
+                                                <TextBlock Foreground="{DynamicResource TextStrongBrush}" FontWeight="SemiBold" Text="App selection"/>
+                                                <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="Click anywhere on an app card to include or remove it from the job."/>
+                                            </StackPanel>
+                                            <Border DockPanel.Dock="Right" Background="{DynamicResource PrimarySoftBrush}" CornerRadius="999" Padding="14,8" Margin="18,0,0,0">
+                                                <TextBlock Text="Card tap selection" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </DockPanel>
+                                    </Border>
+                                    <ListBox Grid.Row="1" x:Name="AppsDataGrid" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch" ItemContainerStyle="{StaticResource AppCardItemStyle}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border x:Name="CardRoot"
+                                                        Background="{DynamicResource SurfaceRaisedBrush}"
+                                                        BorderBrush="{DynamicResource StrokeBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="28"
+                                                        Padding="20"
+                                                        Effect="{StaticResource CardShadow}"
+                                                        PreviewMouseLeftButtonUp="AppCard_PreviewMouseLeftButtonUp">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="92"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="280"/>
+                                                        </Grid.ColumnDefinitions>
 
-                <Border Grid.Row="6" Margin="0,18,0,0" Background="{DynamicResource PrimaryBrush}" CornerRadius="24" Padding="18">
-                    <StackPanel>
-                        <TextBlock Text="Tips" FontWeight="SemiBold" Foreground="White"/>
-                        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Foreground="#EAF1FF" Text="Close browsers, sync clients, editors, and Adobe apps before backup or restore. After each job, review the sidecar report to confirm what was verified."/>
-                    </StackPanel>
-                </Border>
+                                                        <Grid>
+                                                            <Border Width="84" Height="84" Background="{DynamicResource PrimarySoftBrush}" CornerRadius="24" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                                                <TextBlock Text="{Binding BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}"/>
+                                                            </Border>
+                                                            <Border x:Name="SelectionBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource PrimaryBrush}" Width="32" Height="32" CornerRadius="16" BorderBrush="{DynamicResource SurfaceRaisedBrush}" BorderThickness="3">
+                                                                <TextBlock Text="✓" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="Bold"/>
+                                                            </Border>
+                                                        </Grid>
+
+                                                        <StackPanel Grid.Column="1" Margin="20,0,18,0">
+                                                            <TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}" TextWrapping="Wrap"/>
+                                                            <TextBlock Margin="0,4,0,0" Text="{Binding Publisher}" Foreground="{DynamicResource TextMutedBrush}" FontSize="13" TextWrapping="Wrap"/>
+
+                                                            <WrapPanel Margin="0,14,0,0">
+                                                                <Border CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Setter Property="Background" Value="#FFF4E6"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding Supported}" Value="True">
+                                                                                    <Setter Property="Background" Value="#E8FFF1"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                    <TextBlock FontWeight="SemiBold">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Text" Value="Metadata only"/>
+                                                                                <Setter Property="Foreground" Value="#B45309"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding Supported}" Value="True">
+                                                                                        <Setter Property="Text" Value="Supported"/>
+                                                                                        <Setter Property="Foreground" Value="#14754D"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                </Border>
+
+                                                                <Border Background="{DynamicResource SoftSurfaceBrush}" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                                    <TextBlock Text="{Binding Category}" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                                                </Border>
+
+                                                                <Border Background="{DynamicResource PrimarySoftBrush}" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                                    <TextBlock Text="{Binding Confidence, StringFormat=Confidence {0:P0}}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}"/>
+                                                                </Border>
+
+                                                                <Border Background="{DynamicResource SoftSurfaceAltBrush}" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
+                                                                    <TextBlock Text="{Binding RestoreStrategy}" FontWeight="SemiBold" Foreground="#7C3AED"/>
+                                                                </Border>
+                                                            </WrapPanel>
+
+                                                            <TextBlock Margin="0,6,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
+                                                                <Run Text="Version: "/>
+                                                                <Run Text="{Binding Version}"/>
+                                                            </TextBlock>
+                                                            <TextBlock Margin="0,6,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
+                                                                <Run Text="Install location: "/>
+                                                                <Run Text="{Binding InstallLocation}"/>
+                                                            </TextBlock>
+                                                            <TextBlock Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Text="{Binding Notes}"/>
+                                                        </StackPanel>
+
+                                                        <Border Grid.Column="2" Background="{DynamicResource AccentSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="24" Padding="16">
+                                                            <StackPanel>
+                                                                <TextBlock Text="Quick view" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
+                                                                <TextBlock Margin="0,12,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
+                                                                    <Run Text="Rule: "/>
+                                                                    <Run Text="{Binding RuleId}"/>
+                                                                </TextBlock>
+                                                                <TextBlock Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
+                                                                    <Run Text="Publisher: "/>
+                                                                    <Run Text="{Binding Publisher}"/>
+                                                                </TextBlock>
+                                                                <TextBlock Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
+                                                                    <Run Text="Package ID: "/>
+                                                                    <Run Text="{Binding WingetId}"/>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter TargetName="CardRoot" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                                        <Setter TargetName="CardRoot" Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/>
+                                                        <Setter TargetName="SelectionBadge" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </TabItem>
+
+                            <TabItem Header="Activity" Style="{StaticResource ModernTabItemStyle}">
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" Background="{DynamicResource SoftSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="20" Padding="16" Margin="0,0,0,16">
+                                        <TextBlock Foreground="{DynamicResource TextMutedBrush}" Text="Live job output for scanning, backup, restore, WinGet installs, registry work, and verification results."/>
+                                    </Border>
+                                    <Border Grid.Row="1" Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="24" Padding="8" Effect="{StaticResource CardShadow}">
+                                        <TextBox x:Name="LogTextBox"
+                                                 IsReadOnly="True"
+                                                 TextWrapping="Wrap"
+                                                 AcceptsReturn="True"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalScrollBarVisibility="Disabled"
+                                                 Background="Transparent"
+                                                 Foreground="{DynamicResource TextStrongBrush}"
+                                                 BorderThickness="0"
+                                                 Padding="12"
+                                                 FontFamily="Consolas"
+                                                 FontSize="13"/>
+                                    </Border>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
-
-        <Grid Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <Border Grid.Row="0" Style="{StaticResource SectionCardStyle}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="310"/>
-                        <ColumnDefinition Width="14"/>
-                        <ColumnDefinition Width="180"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="Library" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <TextBlock Margin="0,6,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="Review detected apps, search the catalog, and choose what to migrate."/>
-                    </StackPanel>
-                    <TextBox Grid.Column="1" x:Name="SearchTextBox" Style="{StaticResource RoundedTextBoxStyle}" TextChanged="SearchTextBox_TextChanged"/>
-                    <Button Grid.Column="3" x:Name="UpdateButtonTop" Margin="0" Style="{StaticResource GhostButtonStyle}" Click="UpdateButton_Click">Check latest build</Button>
-                </Grid>
-            </Border>
-
-            <Border Grid.Row="1" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="220"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="220"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock x:Name="ProgressStageTextBlock" Text="Ready" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                        <TextBlock x:Name="ProgressMessageTextBlock" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="Close selected apps before backup or restore for best results." TextWrapping="Wrap"/>
-                        <ProgressBar x:Name="OperationProgressBar" Margin="0,18,0,0" Height="16" Minimum="0" Maximum="100" Value="0" Background="{DynamicResource SoftSurfaceBrush}" Foreground="{DynamicResource PrimaryBrush}"/>
-                    </StackPanel>
-                    <Border Grid.Column="1" Background="{DynamicResource AccentSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="22" Padding="16" Effect="{StaticResource CardShadow}">
-                        <StackPanel>
-                            <TextBlock Text="Current app" Foreground="{DynamicResource TextMutedBrush}"/>
-                            <TextBlock x:Name="CurrentAppTextBlock" Margin="0,10,0,0" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}" Text="—" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Column="3" Background="{DynamicResource AccentSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="22" Padding="16" Effect="{StaticResource CardShadow}">
-                        <StackPanel>
-                            <TextBlock Text="Transfer" Foreground="{DynamicResource TextMutedBrush}"/>
-                            <TextBlock x:Name="TransferStatsTextBlock" Margin="0,10,0,0" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}" Text="0 MB / 0 MB" TextWrapping="Wrap"/>
-                            <TextBlock x:Name="EtaTextBlock" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" Text="ETA: --" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </Border>
-
-            <Border Grid.Row="2" Margin="0,18,0,0" Style="{StaticResource SectionCardStyle}">
-                <TabControl Style="{StaticResource ModernTabControlStyle}">
-                    <TabItem Header="Apps" Style="{StaticResource ModernTabItemStyle}">
-                        <Grid Margin="0,8,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Background="{DynamicResource SoftSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="20" Padding="16" Margin="0,0,0,16">
-                                <DockPanel>
-                                    <TextBlock DockPanel.Dock="Left" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Text="Click a card to include or remove it. Each card shows support status, confidence, restore method, and install details."/>
-                                    <Border DockPanel.Dock="Right" Background="{DynamicResource PrimarySoftBrush}" CornerRadius="999" Padding="12,7" Margin="16,0,0,0">
-                                        <TextBlock Text="Card click enabled" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold"/>
-                                    </Border>
-                                </DockPanel>
-                            </Border>
-                            <ListBox Grid.Row="1" x:Name="AppsDataGrid" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch" ItemContainerStyle="{StaticResource AppCardItemStyle}">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border x:Name="CardRoot" Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="26" Padding="18" Effect="{StaticResource CardShadow}" PreviewMouseLeftButtonUp="AppCard_PreviewMouseLeftButtonUp">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="96"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="290"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Border Width="82" Height="82" Background="{DynamicResource PrimarySoftBrush}" CornerRadius="24" HorizontalAlignment="Center" VerticalAlignment="Top">
-                                                    <TextBlock Text="{Binding BadgeText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}"/>
-                                                </Border>
-
-                                                <StackPanel Grid.Column="1" Margin="20,0,18,0">
-                                                    <DockPanel LastChildFill="False">
-                                                        <TextBlock DockPanel.Dock="Left" Text="{Binding DisplayName}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}" TextWrapping="Wrap"/>
-                                                        <Border x:Name="SelectionBadge" DockPanel.Dock="Right" Visibility="Collapsed" Background="{DynamicResource PrimaryBrush}" CornerRadius="999" Padding="12,6" Margin="12,0,0,0">
-                                                            <TextBlock Text="Included" Foreground="White" FontWeight="SemiBold"/>
-                                                        </Border>
-                                                    </DockPanel>
-                                                    <TextBlock Margin="0,6,0,0" Text="{Binding Publisher}" Foreground="{DynamicResource TextMutedBrush}" FontSize="13" TextWrapping="Wrap"/>
-
-                                                    <WrapPanel Margin="0,14,0,0">
-                                                        <Border CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
-                                                            <Border.Style>
-                                                                <Style TargetType="Border">
-                                                                    <Setter Property="Background" Value="#FFF7ED"/>
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding Supported}" Value="True">
-                                                                            <Setter Property="Background" Value="#E8FFF1"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </Border.Style>
-                                                            <TextBlock FontWeight="SemiBold">
-                                                                <TextBlock.Style>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="Text" Value="Metadata only"/>
-                                                                        <Setter Property="Foreground" Value="#B45309"/>
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding Supported}" Value="True">
-                                                                                <Setter Property="Text" Value="Supported"/>
-                                                                                <Setter Property="Foreground" Value="#117A4A"/>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
-                                                        </Border>
-
-                                                        <Border Background="{DynamicResource SoftSurfaceBrush}" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
-                                                            <TextBlock Text="{Binding Category}" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                                                        </Border>
-
-                                                        <Border Background="{DynamicResource PrimarySoftBrush}" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
-                                                            <TextBlock Text="{Binding Confidence, StringFormat=Confidence {0:P0}}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}"/>
-                                                        </Border>
-
-                                                        <Border Background="#F6F0FF" CornerRadius="999" Padding="10,5" Margin="0,0,8,8">
-                                                            <TextBlock Text="{Binding RestoreStrategy}" FontWeight="SemiBold" Foreground="#7F56D9"/>
-                                                        </Border>
-                                                    </WrapPanel>
-
-                                                    <TextBlock Margin="0,6,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
-                                                        <Run Text="Version: "/>
-                                                        <Run Text="{Binding Version}"/>
-                                                    </TextBlock>
-                                                    <TextBlock Margin="0,6,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
-                                                        <Run Text="Install location: "/>
-                                                        <Run Text="{Binding InstallLocation}"/>
-                                                    </TextBlock>
-                                                    <TextBlock Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Text="{Binding Notes}"/>
-                                                </StackPanel>
-
-                                                <Border Grid.Column="2" Background="{DynamicResource AccentSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="22" Padding="16">
-                                                    <StackPanel>
-                                                        <TextBlock Text="Quick view" FontWeight="SemiBold" Foreground="{DynamicResource TextStrongBrush}"/>
-                                                        <TextBlock Margin="0,12,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
-                                                            <Run Text="Rule: "/>
-                                                            <Run Text="{Binding RuleId}"/>
-                                                        </TextBlock>
-                                                        <TextBlock Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
-                                                            <Run Text="Publisher: "/>
-                                                            <Run Text="{Binding Publisher}"/>
-                                                        </TextBlock>
-                                                        <TextBlock Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap">
-                                                            <Run Text="Package ID: "/>
-                                                            <Run Text="{Binding WingetId}"/>
-                                                        </TextBlock>
-                                                    </StackPanel>
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-                                        <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                <Setter TargetName="CardRoot" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                                                <Setter TargetName="CardRoot" Property="Background" Value="{DynamicResource AccentSurfaceBrush}"/>
-                                                <Setter TargetName="SelectionBadge" Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </Grid>
-                    </TabItem>
-
-                    <TabItem Header="Activity" Style="{StaticResource ModernTabItemStyle}">
-                        <Grid Margin="0,8,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Background="{DynamicResource SoftSurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" CornerRadius="20" Padding="16" Margin="0,0,0,16">
-                                <TextBlock Foreground="{DynamicResource TextMutedBrush}" Text="Review the live job log for backup, restore, WinGet, registry work, and verification results."/>
-                            </Border>
-                            <TextBox Grid.Row="1" x:Name="LogTextBox" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="{DynamicResource SurfaceRaisedBrush}" Foreground="{DynamicResource TextStrongBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1" Padding="16" FontFamily="Consolas" FontSize="13"/>
-                        </Grid>
-                    </TabItem>
-                </TabControl>
-            </Border>
-        </Grid>
     </Grid>
 </Window>

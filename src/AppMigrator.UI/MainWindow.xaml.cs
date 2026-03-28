@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     private DateTime _lastProgressStamp = DateTime.UtcNow;
     private long _lastProgressBytes;
     private bool _themeLoaded;
+    private string _currentTheme = "Light";
 
     public MainWindow()
     {
@@ -40,9 +41,9 @@ public partial class MainWindow : Window
         ProjectButton.IsEnabled = !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
         AppsDataGrid.ItemsSource = _apps;
         CollectionViewSource.GetDefaultView(AppsDataGrid.ItemsSource).Filter = AppFilter;
-        ThemeComboBox.SelectedIndex = 0;
         Loaded += MainWindow_Loaded;
 
+        ApplyTheme("Light");
         UpdateSummary();
         Log($"{AppMetadata.DisplayTitle} ready.");
         Log("Use Scan Installed Apps to classify what can be migrated cleanly.");
@@ -52,7 +53,7 @@ public partial class MainWindow : Window
     {
         var settings = await _userSettingsService.LoadAsync();
         var desiredTheme = string.Equals(settings.Theme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Dark" : "Light";
-        ThemeComboBox.SelectedIndex = string.Equals(desiredTheme, "Dark", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        SetThemeSelection(desiredTheme);
         ApplyTheme(desiredTheme);
         _themeLoaded = true;
     }
@@ -333,7 +334,7 @@ public partial class MainWindow : Window
             var current = element;
             while (current is not null)
             {
-                if (current is Button || current is TextBox || current is ScrollBar || current is ComboBox || current is CheckBox)
+                if (current is Button || current is TextBox || current is ScrollBar || current is ComboBox || current is CheckBox || current is RadioButton)
                 {
                     return;
                 }
@@ -362,41 +363,54 @@ public partial class MainWindow : Window
         });
     }
 
-    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void ThemeLightRadio_Checked(object sender, RoutedEventArgs e) => ChangeTheme("Light");
+
+    private void ThemeDarkRadio_Checked(object sender, RoutedEventArgs e) => ChangeTheme("Dark");
+
+    private void ChangeTheme(string themeName)
     {
-        if (ThemeComboBox.SelectedItem is ComboBoxItem item)
+        ApplyTheme(themeName);
+        if (_themeLoaded)
         {
-            var themeName = item.Content?.ToString() ?? "Light";
-            ApplyTheme(themeName);
-            if (_themeLoaded)
-            {
-                _ = _userSettingsService.SaveAsync(new UserSettings { Theme = themeName });
-            }
+            _ = _userSettingsService.SaveAsync(new UserSettings { Theme = themeName });
         }
     }
 
-    private string GetSelectedTheme()
-        => ThemeComboBox.SelectedItem is ComboBoxItem item ? item.Content?.ToString() ?? "Light" : "Light";
+    private string GetSelectedTheme() => _currentTheme;
+
+    private void SetThemeSelection(string themeName)
+    {
+        if (string.Equals(themeName, "Dark", StringComparison.OrdinalIgnoreCase))
+        {
+            DarkThemeRadio.IsChecked = true;
+        }
+        else
+        {
+            LightThemeRadio.IsChecked = true;
+        }
+    }
 
     private void ApplyTheme(string themeName)
     {
         var dark = string.Equals(themeName, "Dark", StringComparison.OrdinalIgnoreCase);
+        _currentTheme = dark ? "Dark" : "Light";
 
-        SetBrush("PageBackgroundBrush", dark ? "#0B1120" : "#F4F6FB");
-        SetBrush("SidebarBrush", dark ? "#101827" : "#FAFBFF");
+        SetBrush("PageBackgroundBrush", dark ? "#0B1220" : "#F6F8FE");
+        SetBrush("SidebarBrush", dark ? "#0F172A" : "#F9FBFF");
         SetBrush("SurfaceBrush", dark ? "#101828" : "#FFFFFF");
-        SetBrush("SurfaceRaisedBrush", dark ? "#111B2E" : "#FFFFFF");
-        SetBrush("AccentSurfaceBrush", dark ? "#13203A" : "#F3F7FF");
-        SetBrush("SoftSurfaceBrush", dark ? "#162236" : "#F8FAFD");
-        SetBrush("StrokeBrush", dark ? "#243247" : "#DFE6F0");
-        SetBrush("PrimaryBrush", dark ? "#7AA2FF" : "#2E6BFF");
-        SetBrush("PrimarySoftBrush", dark ? "#1C2A46" : "#EAF1FF");
-        SetBrush("SuccessBrush", dark ? "#5ED5A1" : "#157A52");
-        SetBrush("WarningBrush", dark ? "#F7B267" : "#B45309");
-        SetBrush("TextStrongBrush", dark ? "#F8FAFC" : "#101828");
-        SetBrush("TextMutedBrush", dark ? "#B3C1D9" : "#667085");
-        SetBrush("TextSoftBrush", dark ? "#8DA2C0" : "#98A2B3");
-        SetBrush("ThemeChipBrush", dark ? "#162641" : "#EEF3FC");
+        SetBrush("SurfaceRaisedBrush", dark ? "#131D31" : "#FFFFFF");
+        SetBrush("AccentSurfaceBrush", dark ? "#17243B" : "#EEF2FF");
+        SetBrush("SoftSurfaceBrush", dark ? "#111B2D" : "#F1F4FB");
+        SetBrush("SoftSurfaceAltBrush", dark ? "#201A38" : "#F7F4FF");
+        SetBrush("StrokeBrush", dark ? "#26344A" : "#D9E0EE");
+        SetBrush("PrimaryBrush", dark ? "#9AA8FF" : "#4F46E5");
+        SetBrush("PrimarySoftBrush", dark ? "#1B2742" : "#ECECFF");
+        SetBrush("SecondaryBrush", dark ? "#67C9FF" : "#0EA5E9");
+        SetBrush("SuccessBrush", dark ? "#6CD8A5" : "#198754");
+        SetBrush("WarningBrush", dark ? "#FFC27A" : "#C77700");
+        SetBrush("TextStrongBrush", dark ? "#F4F7FF" : "#172033");
+        SetBrush("TextMutedBrush", dark ? "#AFBBD0" : "#5C6A82");
+        SetBrush("TextSoftBrush", dark ? "#8795AF" : "#8A95AB");
 
         Background = (System.Windows.Media.Brush)Resources["PageBackgroundBrush"];
         LogTextBox.CaretBrush = (System.Windows.Media.Brush)Resources["TextStrongBrush"];
@@ -415,6 +429,8 @@ public partial class MainWindow : Window
         UpdateButton.IsEnabled = !isBusy;
         UpdateButtonTop.IsEnabled = !isBusy;
         ProjectButton.IsEnabled = !isBusy && !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
+        LightThemeRadio.IsEnabled = !isBusy;
+        DarkThemeRadio.IsEnabled = !isBusy;
         AppsDataGrid.IsEnabled = !isBusy;
         Mouse.OverrideCursor = isBusy ? Cursors.Wait : null;
     }

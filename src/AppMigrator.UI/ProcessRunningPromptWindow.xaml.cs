@@ -29,17 +29,18 @@ public partial class ProcessRunningPromptWindow : Window
     public void ApplyTheme(string themeName)
     {
         var dark = string.Equals(themeName, "Dark", StringComparison.OrdinalIgnoreCase);
-        Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#0B1120" : "#F4F6FB"));
-        ShellBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#101828" : "#FFFFFF"));
-        ShellBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#243247" : "#DFE6F0"));
-        AlertBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#2C231A" : "#FFF7ED"));
-        ProcessesBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#111B2E" : "#FBFCFE"));
-        ProcessesBorder.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#243247" : "#DFE6F0"));
-        TimerBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#182742" : "#EEF4FF"));
+        Background = BrushFrom(dark ? "#0B1220" : "#F6F8FE");
+        ShellBorder.Background = BrushFrom(dark ? "#101828" : "#FFFFFF");
+        ShellBorder.BorderBrush = BrushFrom(dark ? "#26344A" : "#D9E0EE");
+        AlertBadge.Background = BrushFrom(dark ? "#382510" : "#FFF4E6");
+        ProcessesBorder.Background = BrushFrom(dark ? "#131D31" : "#FFFFFF");
+        ProcessesBorder.BorderBrush = BrushFrom(dark ? "#26344A" : "#D9E0EE");
+        TimerBorder.Background = BrushFrom(dark ? "#17243B" : "#EEF2FF");
+        TimerBorder.BorderBrush = BrushFrom(dark ? "#26344A" : "#D9E0EE");
 
-        var primary = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#7AA2FF" : "#2E6BFF"));
-        var strong = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#F8FAFC" : "#101828"));
-        var muted = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? "#B3C1D9" : "#667085"));
+        var strong = BrushFrom(dark ? "#F4F7FF" : "#172033");
+        var muted = BrushFrom(dark ? "#AFBBD0" : "#5C6A82");
+        var primary = BrushFrom(dark ? "#9AA8FF" : "#4F46E5");
 
         TitleTextBlock.Foreground = strong;
         SubtitleTextBlock.Foreground = muted;
@@ -51,6 +52,9 @@ public partial class ProcessRunningPromptWindow : Window
         PromptNoteTextBlock.Foreground = muted;
         ActionHintTextBlock.Foreground = muted;
     }
+
+    private static SolidColorBrush BrushFrom(string color)
+        => new((Color)ColorConverter.ConvertFromString(color));
 
     private void Timer_Tick(object? sender, EventArgs e)
     {
