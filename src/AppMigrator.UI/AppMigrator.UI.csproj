@@ -11,10 +11,10 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\WinAppsMigrator.ico</ApplicationIcon>
     <Product>Win Apps Migrator</Product>
-    <Version>0.0.14</Version>
-    <FileVersion>0.0.14.0</FileVersion>
-    <AssemblyVersion>0.0.14.0</AssemblyVersion>
-    <InformationalVersion>0.0.14</InformationalVersion>
+    <Version>0.0.16</Version>
+    <FileVersion>0.0.16.0</FileVersion>
+    <AssemblyVersion>0.0.16.0</AssemblyVersion>
+    <InformationalVersion>0.0.16</InformationalVersion>
     <Authors>Ox1d3x3</Authors>
   </PropertyGroup>
 
