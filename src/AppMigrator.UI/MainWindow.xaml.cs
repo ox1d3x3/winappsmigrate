@@ -2,7 +2,6 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
-using System.Windows.Input;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
 using Microsoft.Win32;
@@ -19,9 +18,12 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Title = AppMetadata.DisplayTitle;
+        VersionTextBlock.Text = $"Version V{AppMetadata.Version}";
         AppsDataGrid.ItemsSource = _apps;
         UpdateSummary();
-        Log("Ready.");
+        Log($"{AppMetadata.DisplayTitle} ready.");
+        Log("Use Scan Installed Apps to classify what can be migrated cleanly.");
     }
 
     private async void ScanButton_Click(object sender, RoutedEventArgs e)
@@ -98,7 +100,7 @@ public partial class MainWindow : Window
         {
             Filter = "ZIP archives (*.zip)|*.zip",
             Title = "Save backup ZIP",
-            FileName = $"AppMigrator_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip"
+            FileName = $"WinAppsMigrator_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip"
         };
 
         if (dialog.ShowDialog() != true)
@@ -183,7 +185,7 @@ public partial class MainWindow : Window
         BackupButton.IsEnabled = !isBusy;
         RestoreButton.IsEnabled = !isBusy;
         AppsDataGrid.IsEnabled = !isBusy;
-        System.Windows.Input.Mouse.OverrideCursor = isBusy ? System.Windows.Input.Cursors.Wait : null;
+        Mouse.OverrideCursor = isBusy ? Cursors.Wait : null;
     }
 
     private void Log(string message)

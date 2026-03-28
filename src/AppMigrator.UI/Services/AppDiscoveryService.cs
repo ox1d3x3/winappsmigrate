@@ -38,6 +38,7 @@ public sealed class AppDiscoveryService
 
             return results
                 .OrderByDescending(app => app.Supported)
+                .ThenByDescending(app => app.Confidence)
                 .ThenBy(app => app.DisplayName)
                 .ToList();
         });
@@ -96,7 +97,7 @@ public sealed class AppDiscoveryService
                     continue;
                 }
 
-                var matchedRule = _ruleRepository.Match(displayName);
+                var matchedRule = _ruleRepository.Match(displayName, publisher, installLocation);
 
                 results.Add(new DiscoveredApp
                 {
@@ -112,7 +113,7 @@ public sealed class AppDiscoveryService
                     Supported = matchedRule?.Supported ?? false,
                     Confidence = matchedRule?.Confidence ?? 0.15,
                     Notes = matchedRule is null
-                        ? "No built-in migration rule yet."
+                        ? "No migration rule yet. Add one through the built-in rule pack or an external .rule.json file."
                         : string.Join(" ", matchedRule.Notes)
                 });
 

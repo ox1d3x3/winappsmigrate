@@ -5,8 +5,8 @@ namespace AppMigrator.UI.Models;
 
 public sealed class BackupManifest
 {
-    public string ToolName { get; set; } = "AppMigrator MVP";
-    public string ToolVersion { get; set; } = "0.1.0";
+    public string ToolName { get; set; } = AppMigrator.UI.AppMetadata.ProductName;
+    public string ToolVersion { get; set; } = AppMigrator.UI.AppMetadata.Version;
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
     public MachineProfile Machine { get; set; } = new();
     public List<AppBackupEntry> Apps { get; set; } = new();

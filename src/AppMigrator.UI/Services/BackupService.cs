@@ -29,7 +29,7 @@ public sealed class BackupService
             throw new InvalidOperationException("No apps selected.");
         }
 
-        var stagingRoot = Path.Combine(Path.GetTempPath(), $"AppMigrator_{Guid.NewGuid():N}");
+        var stagingRoot = Path.Combine(Path.GetTempPath(), $"WinAppsMigrator_{Guid.NewGuid():N}");
         Directory.CreateDirectory(stagingRoot);
 
         try

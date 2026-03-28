@@ -27,7 +27,7 @@ public sealed class RestoreService
             throw new FileNotFoundException("Backup ZIP not found.", backupZipPath);
         }
 
-        var extractionRoot = Path.Combine(Path.GetTempPath(), $"AppMigratorRestore_{Guid.NewGuid():N}");
+        var extractionRoot = Path.Combine(Path.GetTempPath(), $"WinAppsMigratorRestore_{Guid.NewGuid():N}");
         Directory.CreateDirectory(extractionRoot);
 
         try
