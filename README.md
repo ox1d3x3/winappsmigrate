@@ -1,13 +1,14 @@
-# Win Apps Migrator V0.0.3
+# Win Apps Migrator V0.0.5
 
 This package contains the WPF/.NET 8 Windows prototype for Win Apps Migrator.
 
-## Highlights in V0.0.3
-- redesigned desktop UI with a cleaner two-panel layout
-- larger app cards with clearer support, confidence, and restore strategy presentation
-- modernized running-app prompt styling
-- responsive progress and activity area preserved
-- versioning updated to V0.0.3
+## Highlights in V0.0.5
+- cleaner card-based desktop UI with click-anywhere app selection
+- improved running-app prompt with visible continue, skip, and cancel actions
+- restore flow now prefers WinGet's `winget` source directly to avoid `msstore` source issues
+- restore now checks whether an app already appears installed before attempting WinGet
+- fallback WinGet name search added when a backup entry has no package ID
+- WinGet log output is cleaned up to reduce spinner/progress-bar garbage in the activity view
 
 ## Build
 1. Open `AppMigrator.sln` in Visual Studio 2022 or later.
@@ -24,6 +25,4 @@ This package contains the WPF/.NET 8 Windows prototype for Win Apps Migrator.
 ## Notes
 - Best results come from restoring after the target app is installed.
 - Close browsers, sync clients, editors, and Adobe apps before backup or restore.
-
-
-V0.0.4: fixed single-file startup by removing runtime file-based window icon dependency and added startup crash logging to %LOCALAPPDATA%\WinAppsMigrator\startup-crash.log.
+- If WinGet sources are broken on the target machine, run `winget source reset --force` and `winget source update` once from an elevated terminal.

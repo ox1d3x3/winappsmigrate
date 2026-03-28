@@ -17,7 +17,7 @@ public partial class ProcessRunningPromptWindow : Window
         InitializeComponent();
         _remainingSeconds = seconds;
         TitleTextBlock.Text = $"{appName} is still running";
-        MessageTextBlock.Text = $"Please close these processes before backup or restore: {processList}. If nothing is pressed before the timer expires, this app will be skipped.";
+        MessageTextBlock.Text = processList;
         CountdownTextBlock.Text = $"Skipping automatically in {_remainingSeconds} seconds.";
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -28,7 +28,10 @@ public partial class ProcessRunningPromptWindow : Window
     private void Timer_Tick(object? sender, EventArgs e)
     {
         _remainingSeconds--;
-        CountdownTextBlock.Text = $"Skipping automatically in {_remainingSeconds} seconds.";
+        CountdownTextBlock.Text = _remainingSeconds <= 0
+            ? "Skipping now..."
+            : $"Skipping automatically in {_remainingSeconds} seconds.";
+
         if (_remainingSeconds <= 0)
         {
             _timer.Stop();

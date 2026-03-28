@@ -3,7 +3,7 @@ namespace AppMigrator.UI;
 public static class AppMetadata
 {
     public const string ProductName = "Win Apps Migrator";
-    public const string Version = "0.0.4";
+    public const string Version = "0.0.5";
     public const string Author = "Ox1d3x3";
     public const string ProjectUrl = "";
     public const string GitHubLatestReleaseApiUrl = "";

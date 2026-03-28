@@ -15,6 +15,7 @@ public sealed class RestoreService
 {
     private readonly RegistryService _registryService;
     private readonly WinGetService _winGetService;
+    private readonly KnownRuleRepository _ruleRepository = new();
 
     public RestoreService(RegistryService registryService, WinGetService winGetService)
     {
@@ -47,6 +48,8 @@ public sealed class RestoreService
                 var manifest = JsonSerializer.Deserialize<BackupManifest>(await File.ReadAllTextAsync(manifestPath), JsonHelper.DefaultOptions)
                     ?? throw new InvalidOperationException("Backup manifest could not be parsed.");
 
+                var discovery = new AppDiscoveryService(_ruleRepository);
+                var installedApps = await discovery.DiscoverAsync();
                 long totalBytes = manifest.Apps.SelectMany(a => a.Paths).Sum(p => p.SizeBytes);
                 long processedBytes = 0;
                 log?.Report($"Loaded backup with {manifest.Apps.Count} app entries.");
@@ -54,23 +57,13 @@ public sealed class RestoreService
                 for (var appIndex = 0; appIndex < manifest.Apps.Count; appIndex++)
                 {
                     var app = manifest.Apps[appIndex];
+                    var perAppWarnings = new List<string>();
                     log?.Report($"Restoring: {app.DisplayName}");
                     Report(progress, "Restore", $"Preparing restore for {app.DisplayName}", app.DisplayName, appIndex, manifest.Apps.Count, processedBytes, totalBytes);
 
-                    if (attemptWinGetInstall && !string.IsNullOrWhiteSpace(app.WingetId))
+                    if (attemptWinGetInstall)
                     {
-                        if (_winGetService.IsAvailable())
-                        {
-                            log?.Report($"Attempting WinGet install for {app.DisplayName} ({app.WingetId})");
-                            var install = await _winGetService.InstallWithRecoveryAsync(app.WingetId!);
-                            log?.Report(install.Succeeded
-                                ? $"WinGet install completed for {app.DisplayName}"
-                                : $"WinGet install warning for {app.DisplayName}: {install.Message}");
-                        }
-                        else
-                        {
-                            log?.Report("WinGet is not available on this system.");
-                        }
+                        await EnsureAppInstalledAsync(app, installedApps, perAppWarnings, log);
                     }
 
                     foreach (var pathEntry in app.Paths)
@@ -91,7 +84,9 @@ public sealed class RestoreService
                             }
                             else
                             {
-                                log?.Report($"Warning: backup directory missing: {sourcePath}");
+                                var warning = $"Backup directory missing: {sourcePath}";
+                                perAppWarnings.Add(warning);
+                                log?.Report($"Warning: {warning}");
                             }
                         }
                         else
@@ -107,7 +102,9 @@ public sealed class RestoreService
                             }
                             else
                             {
-                                log?.Report($"Warning: backup file missing: {sourcePath}");
+                                var warning = $"Backup file missing: {sourcePath}";
+                                perAppWarnings.Add(warning);
+                                log?.Report($"Warning: {warning}");
                             }
                         }
                     }
@@ -117,23 +114,34 @@ public sealed class RestoreService
                         var regFile = Path.Combine(extractionRoot, registryEntry.BackupRelativePath.Replace('/', Path.DirectorySeparatorChar));
                         if (!File.Exists(regFile))
                         {
-                            log?.Report($"Warning: registry backup file missing: {regFile}");
+                            var warning = $"Registry backup file missing: {regFile}";
+                            perAppWarnings.Add(warning);
+                            log?.Report($"Warning: {warning}");
                             continue;
                         }
 
                         log?.Report($"Importing registry: {registryEntry.RegistryKeyPath}");
                         var import = await _registryService.ImportKeyAsync(regFile);
-                        log?.Report(import.Succeeded
-                            ? $"Registry import ok: {registryEntry.RegistryKeyPath}"
-                            : $"Registry import warning: {registryEntry.RegistryKeyPath} - {import.Error}");
+                        if (import.Succeeded)
+                        {
+                            log?.Report($"Registry import ok: {registryEntry.RegistryKeyPath}");
+                        }
+                        else
+                        {
+                            var warning = $"Registry import warning: {registryEntry.RegistryKeyPath} - {import.Error}";
+                            perAppWarnings.Add(warning);
+                            log?.Report(warning);
+                        }
                     }
 
                     if (app.Warnings.Count > 0)
                     {
+                        perAppWarnings.AddRange(app.Warnings);
                         log?.Report($"Restore notes for {app.DisplayName}: {string.Join(" | ", app.Warnings)}");
                     }
 
-                    reportLines.Add($"OK | {app.DisplayName} | Paths: {app.Paths.Count} | Registry: {app.Registry.Count} | Warnings: {app.Warnings.Count}");
+                    var status = perAppWarnings.Count == 0 ? "OK" : "WARN";
+                    reportLines.Add($"{status} | {app.DisplayName} | Paths: {app.Paths.Count} | Registry: {app.Registry.Count} | Warnings: {perAppWarnings.Count}");
                 }
 
                 var reportPath = Path.Combine(extractionRoot, "restore_report.txt");
@@ -158,6 +166,78 @@ public sealed class RestoreService
                 }
             }
         });
+
+    private async Task EnsureAppInstalledAsync(AppBackupEntry app, List<DiscoveredApp> installedApps, List<string> warnings, IProgress<string>? log)
+    {
+        if (_winGetService.IsAvailable() is false)
+        {
+            log?.Report("WinGet is not available on this system.");
+            return;
+        }
+
+        if (IsAlreadyInstalled(app, installedApps))
+        {
+            log?.Report($"Install check: {app.DisplayName} already appears to be installed. Skipping WinGet install.");
+            return;
+        }
+
+        string? packageId = app.WingetId;
+        if (string.IsNullOrWhiteSpace(packageId))
+        {
+            log?.Report($"Searching WinGet for {app.DisplayName}...");
+            var lookup = await _winGetService.FindPackageIdByNameAsync(app.DisplayName);
+            if (lookup.Found)
+            {
+                packageId = lookup.PackageId;
+                log?.Report(lookup.Message);
+            }
+            else
+            {
+                var warning = $"WinGet package was not found for {app.DisplayName}.";
+                warnings.Add(warning);
+                log?.Report($"Warning: {warning} {lookup.Message}".Trim());
+                return;
+            }
+        }
+
+        log?.Report($"Attempting WinGet install for {app.DisplayName} ({packageId})");
+        var install = await _winGetService.InstallWithRecoveryAsync(packageId!);
+        if (install.Succeeded)
+        {
+            log?.Report($"WinGet install completed for {app.DisplayName}");
+            return;
+        }
+
+        var warningText = $"WinGet install warning for {app.DisplayName}: {install.Message}";
+        warnings.Add(warningText);
+        log?.Report(warningText);
+    }
+
+    private static bool IsAlreadyInstalled(AppBackupEntry app, IEnumerable<DiscoveredApp> installedApps)
+    {
+        foreach (var installed in installedApps)
+        {
+            if (!string.IsNullOrWhiteSpace(app.WingetId)
+                && !string.IsNullOrWhiteSpace(installed.WingetId)
+                && string.Equals(app.WingetId, installed.WingetId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(installed.DisplayName, app.DisplayName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (installed.DisplayName.Contains(app.DisplayName, StringComparison.OrdinalIgnoreCase)
+                || app.DisplayName.Contains(installed.DisplayName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static void Report(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, int currentIndex, int totalApps, long processedBytes, long totalBytes)
     {

@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
@@ -304,6 +305,32 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AppCard_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement card || card.DataContext is not DiscoveredApp app)
+        {
+            return;
+        }
+
+        if (e.OriginalSource is FrameworkElement element)
+        {
+            var current = element;
+            while (current is not null)
+            {
+                if (current is Button || current is TextBox || current is ScrollBar)
+                {
+                    return;
+                }
+
+                current = current.Parent as FrameworkElement;
+            }
+        }
+
+        app.IsSelected = !app.IsSelected;
+        UpdateSummary();
+        e.Handled = true;
+    }
+
     private void ProjectButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl))
@@ -327,6 +354,7 @@ public partial class MainWindow : Window
         BackupButton.IsEnabled = !isBusy;
         RestoreButton.IsEnabled = !isBusy;
         UpdateButton.IsEnabled = !isBusy;
+        UpdateButtonTop.IsEnabled = !isBusy;
         ProjectButton.IsEnabled = !isBusy && !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
         AppsDataGrid.IsEnabled = !isBusy;
         System.Windows.Input.Mouse.OverrideCursor = isBusy ? System.Windows.Input.Cursors.Wait : null;
