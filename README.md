@@ -37,6 +37,13 @@ Because this is beta software, results can vary depending on:
 - Licensing, machine-bound settings, services, or driver dependencies
 - WinGet source availability and package match accuracy
 
+
+## Screenshots
+<img width="1395" height="904" alt="image" src="https://github.com/user-attachments/assets/24daefb5-a1cd-48be-a18d-efb020b26838" />
+<img width="1399" height="904" alt="image" src="https://github.com/user-attachments/assets/cf7c9733-c227-4991-87b7-69d4c9002bfe" />
+
+
+
 ## What the App Is Intended to Do
 
 Win Apps Migrator is intended to make application migration easier by handling the parts that usually take the most time after reinstalling Windows:
