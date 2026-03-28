@@ -13,6 +13,7 @@ using System.Windows.Data;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
 using Microsoft.Win32;
+using MaterialDesignThemes.Wpf;
 
 namespace AppMigrator.UI;
 
@@ -36,7 +37,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         Title = AppMetadata.DisplayTitle;
-        VersionTextBlock.Text = $"Version V{AppMetadata.Version}";
+        VersionTextBlock.Text = $"Version {AppMetadata.Version}";
         AuthorTextBlock.Text = $"Author: {AppMetadata.Author}";
         ProjectButton.IsEnabled = !string.IsNullOrWhiteSpace(AppMetadata.ProjectUrl);
         AppsDataGrid.ItemsSource = _apps;
@@ -395,22 +396,36 @@ public partial class MainWindow : Window
         var dark = string.Equals(themeName, "Dark", StringComparison.OrdinalIgnoreCase);
         _currentTheme = dark ? "Dark" : "Light";
 
-        SetBrush("PageBackgroundBrush", dark ? "#0B1220" : "#F6F8FE");
-        SetBrush("SidebarBrush", dark ? "#0F172A" : "#F9FBFF");
-        SetBrush("SurfaceBrush", dark ? "#101828" : "#FFFFFF");
-        SetBrush("SurfaceRaisedBrush", dark ? "#131D31" : "#FFFFFF");
-        SetBrush("AccentSurfaceBrush", dark ? "#17243B" : "#EEF2FF");
-        SetBrush("SoftSurfaceBrush", dark ? "#111B2D" : "#F1F4FB");
-        SetBrush("SoftSurfaceAltBrush", dark ? "#201A38" : "#F7F4FF");
-        SetBrush("StrokeBrush", dark ? "#26344A" : "#D9E0EE");
-        SetBrush("PrimaryBrush", dark ? "#9AA8FF" : "#4F46E5");
-        SetBrush("PrimarySoftBrush", dark ? "#1B2742" : "#ECECFF");
-        SetBrush("SecondaryBrush", dark ? "#67C9FF" : "#0EA5E9");
-        SetBrush("SuccessBrush", dark ? "#6CD8A5" : "#198754");
-        SetBrush("WarningBrush", dark ? "#FFC27A" : "#C77700");
-        SetBrush("TextStrongBrush", dark ? "#F4F7FF" : "#172033");
-        SetBrush("TextMutedBrush", dark ? "#AFBBD0" : "#5C6A82");
-        SetBrush("TextSoftBrush", dark ? "#8795AF" : "#8A95AB");
+        try
+        {
+            var paletteHelper = new PaletteHelper();
+            var theme = paletteHelper.GetTheme();
+            theme.SetBaseTheme(dark ? BaseTheme.Dark : BaseTheme.Light);
+            paletteHelper.SetTheme(theme);
+        }
+        catch
+        {
+        }
+
+        SetBrush("PageBackgroundBrush", dark ? "#10131A" : "#F4F6FB");
+        SetBrush("ShellBrush", dark ? "#151A22" : "#EDF2FA");
+        SetBrush("SurfaceBrush", dark ? "#1A202B" : "#FFFFFF");
+        SetBrush("SurfaceAltBrush", dark ? "#202A37" : "#F7F9FE");
+        SetBrush("SurfacePopBrush", dark ? "#18202B" : "#FFFFFF");
+        SetBrush("TonalBrush", dark ? "#22324A" : "#E8EEFF");
+        SetBrush("TonalStrongBrush", dark ? "#2A3C58" : "#D9E6FF");
+        SetBrush("StrokeBrush", dark ? "#2F3C4D" : "#D8DFEC");
+        SetBrush("StrokeStrongBrush", dark ? "#475569" : "#C5D1E2");
+        SetBrush("PrimaryBrush", dark ? "#9AB1FF" : "#3F66F1");
+        SetBrush("PrimaryContainerBrush", dark ? "#243554" : "#E4EBFF");
+        SetBrush("SecondaryContainerBrush", dark ? "#213241" : "#E7F3FF");
+        SetBrush("SuccessBrush", dark ? "#7CE0AE" : "#147D52");
+        SetBrush("SuccessContainerBrush", dark ? "#1D3B31" : "#DCF7EA");
+        SetBrush("WarningBrush", dark ? "#FFC06A" : "#B96B00");
+        SetBrush("WarningContainerBrush", dark ? "#3A2B15" : "#FFF1DA");
+        SetBrush("TextStrongBrush", dark ? "#F5F7FB" : "#162033");
+        SetBrush("TextMutedBrush", dark ? "#B3C0D4" : "#64748B");
+        SetBrush("TextSoftBrush", dark ? "#8F9DB4" : "#91A0B5");
 
         Background = (System.Windows.Media.Brush)Resources["PageBackgroundBrush"];
         LogTextBox.CaretBrush = (System.Windows.Media.Brush)Resources["TextStrongBrush"];
