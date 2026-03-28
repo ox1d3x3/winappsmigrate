@@ -65,6 +65,7 @@ public sealed class PackageInstallRequest
     public string Publisher { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
     public string RestoreStrategy { get; set; } = string.Empty;
+    public bool Supported { get; set; }
     public string? WingetId { get; set; }
     public string? ChocolateyId { get; set; }
 }
@@ -84,6 +85,10 @@ public sealed class PackageRestoreExecutionResult
 
     public int AlreadyInstalledCount => Results.Count(x => string.Equals(x.Status, "AlreadyInstalled", StringComparison.OrdinalIgnoreCase));
     public int InstalledCount => Results.Count(x => string.Equals(x.Status, "Installed", StringComparison.OrdinalIgnoreCase));
-    public int WarningCount => Results.Count(x => string.Equals(x.Status, "Warning", StringComparison.OrdinalIgnoreCase));
+    public int NotFoundCount => Results.Count(x => string.Equals(x.Status, "NotFound", StringComparison.OrdinalIgnoreCase));
+    public int SkippedCount => Results.Count(x => string.Equals(x.Status, "Skipped", StringComparison.OrdinalIgnoreCase));
+    public int FailedCount => Results.Count(x => string.Equals(x.Status, "Failed", StringComparison.OrdinalIgnoreCase));
+    public int WarningCount => Results.Count(x => !string.Equals(x.Status, "Installed", StringComparison.OrdinalIgnoreCase)
+                                               && !string.Equals(x.Status, "AlreadyInstalled", StringComparison.OrdinalIgnoreCase));
     public int TotalCount => Results.Count;
 }

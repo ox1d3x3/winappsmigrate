@@ -14,7 +14,7 @@ public sealed class WinGetService
     {
         try
         {
-            var result = RunAsync("--version").GetAwaiter().GetResult();
+            var result = RunAsync("--version", timeout: TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             return result.Succeeded;
         }
         catch
@@ -44,7 +44,7 @@ public sealed class WinGetService
     public async Task<(bool Succeeded, string Message)> InstallByIdAsync(string packageId, IProgress<string>? liveOutput = null)
     {
         var escapedPackageId = packageId.Replace("\"", string.Empty);
-        return await RunAsync($"install --id \"{escapedPackageId}\" -e --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements", liveOutput);
+        return await RunAsync($"install --id \"{escapedPackageId}\" -e --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements", liveOutput, TimeSpan.FromMinutes(20));
     }
 
     public async Task<(bool Found, string? PackageId, string Message)> FindPackageIdByNameAsync(string appName, IProgress<string>? liveOutput = null)
@@ -54,24 +54,24 @@ public sealed class WinGetService
             return (false, null, "App name is empty.");
         }
 
-        var exact = await RunAsync($"search --name \"{EscapeArg(appName)}\" --exact --source winget --accept-source-agreements", liveOutput);
+        var exact = await RunAsync($"search --name \"{EscapeArg(appName)}\" --exact --source winget --accept-source-agreements", liveOutput, TimeSpan.FromSeconds(20));
         var exactId = TryParsePackageId(exact.Message, appName);
         if (exactId is not null)
         {
             return (true, exactId, $"Matched WinGet package: {exactId}");
         }
 
-        var broad = await RunAsync($"search \"{EscapeArg(appName)}\" --source winget --accept-source-agreements", liveOutput);
+        var broad = await RunAsync($"search \"{EscapeArg(appName)}\" --source winget --accept-source-agreements", liveOutput, TimeSpan.FromSeconds(25));
         var broadId = TryParsePackageId(broad.Message, appName);
         return broadId is not null
             ? (true, broadId, $"Matched WinGet package: {broadId}")
-            : (false, null, SanitizeMessage(broad.Message));
+            : (false, null, string.IsNullOrWhiteSpace(broad.Message) ? SanitizeMessage(exact.Message) : SanitizeMessage(broad.Message));
     }
 
     public async Task ResetSourcesAsync(IProgress<string>? liveOutput = null)
     {
-        await RunAsync("source reset --force", liveOutput);
-        await RunAsync("source update", liveOutput);
+        await RunAsync("source reset --force", liveOutput, TimeSpan.FromMinutes(2));
+        await RunAsync("source update", liveOutput, TimeSpan.FromMinutes(2));
     }
 
     private static bool NeedsSourceRecovery(string message)
@@ -83,6 +83,10 @@ public sealed class WinGetService
 
     private static string? TryParsePackageId(string rawOutput, string appName)
     {
+        var normalizedApp = Normalize(appName);
+        var bestPackageId = default(string);
+        var bestScore = 0;
+
         var lines = SanitizeMessage(rawOutput)
             .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Trim())
@@ -100,17 +104,55 @@ public sealed class WinGetService
             }
 
             var parts = Regex.Split(line, "\\s{2,}").Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
-            if (parts.Length >= 2)
+            if (parts.Length < 2)
             {
-                if (parts[0].Contains(appName, StringComparison.OrdinalIgnoreCase) || appName.Contains(parts[0], StringComparison.OrdinalIgnoreCase))
-                {
-                    return parts[1].Trim();
-                }
+                continue;
+            }
+
+            var candidateName = parts[0].Trim();
+            var candidateId = parts[1].Trim();
+            if (string.IsNullOrWhiteSpace(candidateId))
+            {
+                continue;
+            }
+
+            var score = Score(normalizedApp, Normalize(candidateName), Normalize(candidateId));
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestPackageId = candidateId;
             }
         }
 
-        return null;
+        return bestScore >= 45 ? bestPackageId : null;
     }
+
+    private static int Score(string expected, string actualName, string actualId)
+    {
+        var score = 0;
+        if (string.Equals(expected, actualName, StringComparison.OrdinalIgnoreCase))
+        {
+            score += 100;
+        }
+        else if (actualName.Contains(expected, StringComparison.OrdinalIgnoreCase) || expected.Contains(actualName, StringComparison.OrdinalIgnoreCase))
+        {
+            score += 80;
+        }
+
+        if (actualId.Contains(expected, StringComparison.OrdinalIgnoreCase))
+        {
+            score += 20;
+        }
+
+        var expectedTokens = expected.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var actualTokens = (actualName + " " + actualId).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var overlap = expectedTokens.Intersect(actualTokens, StringComparer.OrdinalIgnoreCase).Count();
+        score += overlap * 12;
+        return score;
+    }
+
+    private static string Normalize(string value)
+        => Regex.Replace(value, @"[^a-zA-Z0-9]+", " ").Trim().ToLowerInvariant();
 
     private static string SanitizeMessage(string raw)
     {
@@ -131,12 +173,7 @@ public sealed class WinGetService
                 continue;
             }
 
-            if (Regex.IsMatch(trimmed, @"^[\\|/\\-]+$"))
-            {
-                continue;
-            }
-
-            if (Regex.IsMatch(trimmed, @"^[\u2580-\u259F\s\.:%/\\-]+$"))
+            if (Regex.IsMatch(trimmed, @"^[\\|/\\-]+$") || Regex.IsMatch(trimmed, @"^[\u2580-\u259F\s\.:%/\\-]+$"))
             {
                 continue;
             }
@@ -147,7 +184,7 @@ public sealed class WinGetService
         return builder.ToString().Trim();
     }
 
-    private static async Task<(bool Succeeded, string Message)> RunAsync(string arguments, IProgress<string>? liveOutput = null)
+    private static async Task<(bool Succeeded, string Message)> RunAsync(string arguments, IProgress<string>? liveOutput = null, TimeSpan? timeout = null)
     {
         var psi = new ProcessStartInfo
         {
@@ -164,35 +201,8 @@ public sealed class WinGetService
         using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         var outputLines = new List<string>();
 
-        process.OutputDataReceived += (_, e) =>
-        {
-            if (string.IsNullOrWhiteSpace(e.Data))
-            {
-                return;
-            }
-
-            lock (outputLines)
-            {
-                outputLines.Add(e.Data);
-            }
-
-            liveOutput?.Report(e.Data.Trim());
-        };
-
-        process.ErrorDataReceived += (_, e) =>
-        {
-            if (string.IsNullOrWhiteSpace(e.Data))
-            {
-                return;
-            }
-
-            lock (outputLines)
-            {
-                outputLines.Add(e.Data);
-            }
-
-            liveOutput?.Report(e.Data.Trim());
-        };
+        process.OutputDataReceived += (_, e) => CaptureOutput(e.Data, outputLines, liveOutput);
+        process.ErrorDataReceived += (_, e) => CaptureOutput(e.Data, outputLines, liveOutput);
 
         if (!process.Start())
         {
@@ -201,7 +211,19 @@ public sealed class WinGetService
 
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        await process.WaitForExitAsync();
+
+        var waitForExitTask = process.WaitForExitAsync();
+        if (timeout.HasValue)
+        {
+            var completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(timeout.Value));
+            if (completedTask != waitForExitTask)
+            {
+                TryKill(process);
+                return (false, $"WinGet command timed out after {timeout.Value.TotalSeconds:0} seconds.");
+            }
+        }
+
+        await waitForExitTask;
 
         string message;
         lock (outputLines)
@@ -214,5 +236,56 @@ public sealed class WinGetService
         return process.ExitCode == 0
             ? (true, string.IsNullOrWhiteSpace(message) ? "Command completed successfully." : message)
             : (false, string.IsNullOrWhiteSpace(message) ? "WinGet command failed." : message);
+    }
+
+    private static void CaptureOutput(string? rawLine, List<string> outputLines, IProgress<string>? liveOutput)
+    {
+        var cleaned = CleanLiveOutputLine(rawLine);
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            return;
+        }
+
+        lock (outputLines)
+        {
+            outputLines.Add(cleaned);
+        }
+
+        liveOutput?.Report(cleaned);
+    }
+
+    private static string CleanLiveOutputLine(string? rawLine)
+    {
+        if (string.IsNullOrWhiteSpace(rawLine))
+        {
+            return string.Empty;
+        }
+
+        var cleaned = Regex.Replace(rawLine.Trim(), "\\x1B\\[[0-9;?]*[ -/]*[@-~]", string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            return string.Empty;
+        }
+
+        if (Regex.IsMatch(cleaned, @"^[\\|/\\-]+$") || Regex.IsMatch(cleaned, @"^[\u2580-\u259F\s\.:%/\\-]+$"))
+        {
+            return string.Empty;
+        }
+
+        return cleaned;
+    }
+
+    private static void TryKill(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(true);
+            }
+        }
+        catch
+        {
+        }
     }
 }

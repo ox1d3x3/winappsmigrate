@@ -14,7 +14,7 @@ public sealed class ChocolateyService
     {
         try
         {
-            var result = RunAsync("--version").GetAwaiter().GetResult();
+            var result = RunAsync("--version", timeout: TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             return result.Succeeded;
         }
         catch
@@ -26,7 +26,7 @@ public sealed class ChocolateyService
     public async Task<(bool Succeeded, string Message)> InstallByIdAsync(string packageId, IProgress<string>? liveOutput = null)
     {
         var safeId = EscapeArg(packageId);
-        return await RunAsync($"install {safeId} -y --no-progress", liveOutput);
+        return await RunAsync($"install {safeId} -y --no-progress", liveOutput, TimeSpan.FromMinutes(20));
     }
 
     public async Task<(bool Found, string? PackageId, string Message)> FindPackageIdByNameAsync(string appName, IProgress<string>? liveOutput = null)
@@ -36,16 +36,18 @@ public sealed class ChocolateyService
             return (false, null, "App name is empty.");
         }
 
-        var result = await RunAsync($"search \"{EscapeArg(appName)}\" --limit-output", liveOutput);
-        if (!result.Succeeded)
+        var exact = await RunAsync($"search \"{EscapeArg(appName)}\" --exact --limit-output", liveOutput, TimeSpan.FromSeconds(20));
+        var exactId = TryParsePackageId(exact.Message, appName);
+        if (exactId is not null)
         {
-            return (false, null, result.Message);
+            return (true, exactId, $"Matched Chocolatey package: {exactId}");
         }
 
-        var packageId = TryParsePackageId(result.Message, appName);
-        return packageId is null
-            ? (false, null, result.Message)
-            : (true, packageId, $"Matched Chocolatey package: {packageId}");
+        var broad = await RunAsync($"search \"{EscapeArg(appName)}\" --limit-output", liveOutput, TimeSpan.FromSeconds(20));
+        var broadId = TryParsePackageId(broad.Message, appName);
+        return broadId is not null
+            ? (true, broadId, $"Matched Chocolatey package: {broadId}")
+            : (false, null, string.IsNullOrWhiteSpace(broad.Message) ? exact.Message : broad.Message);
     }
 
     private static string EscapeArg(string value) => value.Replace("\"", string.Empty);
@@ -136,7 +138,7 @@ public sealed class ChocolateyService
         return builder.ToString().Trim();
     }
 
-    private static async Task<(bool Succeeded, string Message)> RunAsync(string arguments, IProgress<string>? liveOutput = null)
+    private static async Task<(bool Succeeded, string Message)> RunAsync(string arguments, IProgress<string>? liveOutput = null, TimeSpan? timeout = null)
     {
         var psi = new ProcessStartInfo
         {
@@ -153,35 +155,8 @@ public sealed class ChocolateyService
         using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         var outputLines = new List<string>();
 
-        process.OutputDataReceived += (_, e) =>
-        {
-            if (string.IsNullOrWhiteSpace(e.Data))
-            {
-                return;
-            }
-
-            lock (outputLines)
-            {
-                outputLines.Add(e.Data);
-            }
-
-            liveOutput?.Report(e.Data.Trim());
-        };
-
-        process.ErrorDataReceived += (_, e) =>
-        {
-            if (string.IsNullOrWhiteSpace(e.Data))
-            {
-                return;
-            }
-
-            lock (outputLines)
-            {
-                outputLines.Add(e.Data);
-            }
-
-            liveOutput?.Report(e.Data.Trim());
-        };
+        process.OutputDataReceived += (_, e) => CaptureOutput(e.Data, outputLines, liveOutput);
+        process.ErrorDataReceived += (_, e) => CaptureOutput(e.Data, outputLines, liveOutput);
 
         if (!process.Start())
         {
@@ -190,7 +165,19 @@ public sealed class ChocolateyService
 
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        await process.WaitForExitAsync();
+
+        var waitForExitTask = process.WaitForExitAsync();
+        if (timeout.HasValue)
+        {
+            var completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(timeout.Value));
+            if (completedTask != waitForExitTask)
+            {
+                TryKill(process);
+                return (false, $"Chocolatey command timed out after {timeout.Value.TotalSeconds:0} seconds.");
+            }
+        }
+
+        await waitForExitTask;
 
         string message;
         lock (outputLines)
@@ -203,5 +190,56 @@ public sealed class ChocolateyService
         return process.ExitCode == 0
             ? (true, string.IsNullOrWhiteSpace(message) ? "Command completed successfully." : message)
             : (false, string.IsNullOrWhiteSpace(message) ? "Chocolatey command failed." : message);
+    }
+
+    private static void CaptureOutput(string? rawLine, List<string> outputLines, IProgress<string>? liveOutput)
+    {
+        var cleaned = CleanLiveOutputLine(rawLine);
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            return;
+        }
+
+        lock (outputLines)
+        {
+            outputLines.Add(cleaned);
+        }
+
+        liveOutput?.Report(cleaned);
+    }
+
+    private static string CleanLiveOutputLine(string? rawLine)
+    {
+        if (string.IsNullOrWhiteSpace(rawLine))
+        {
+            return string.Empty;
+        }
+
+        var cleaned = Regex.Replace(rawLine.Trim(), "\\x1B\\[[0-9;?]*[ -/]*[@-~]", string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            return string.Empty;
+        }
+
+        if (cleaned.StartsWith("Chocolatey v", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        return cleaned;
+    }
+
+    private static void TryKill(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(true);
+            }
+        }
+        catch
+        {
+        }
     }
 }

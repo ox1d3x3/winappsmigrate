@@ -9,6 +9,9 @@ namespace AppMigrator.UI.Services;
 
 public sealed class PackageRestoreService
 {
+    private const double CheckPhaseWeight = 45d;
+    private const double InstallPhaseWeight = 55d;
+
     private readonly KnownRuleRepository _ruleRepository;
     private readonly WinGetService _winGetService;
     private readonly ChocolateyService _chocolateyService;
@@ -33,6 +36,7 @@ public sealed class PackageRestoreService
                 Publisher = package.Publisher,
                 Version = package.Version,
                 RestoreStrategy = package.RestoreStrategy,
+                Supported = package.Supported,
                 WingetId = string.IsNullOrWhiteSpace(package.WingetId) ? null : package.WingetId,
                 ChocolateyId = string.IsNullOrWhiteSpace(package.ChocolateyId) ? null : package.ChocolateyId
             })
@@ -62,195 +66,276 @@ public sealed class PackageRestoreService
             throw new InvalidOperationException("Neither WinGet nor Chocolatey is available on this system. Install one package manager first, then try again.");
         }
 
+        var plans = new List<PackageInstallPlan>(requests.Count);
         for (var index = 0; index < requests.Count; index++)
         {
-            var request = requests[index];
-            Report(progress, "Package restore", $"Checking if {request.DisplayName} is already installed", request.DisplayName, index, requests.Count, false);
+            var request = NormalizeRequest(requests[index]);
+            ReportCheck(progress, $"Checking apps ({index + 1}/{requests.Count})", $"Checking {request.DisplayName}", request.DisplayName, index, requests.Count, false);
 
-            if (IsAlreadyInstalled(request, installedApps))
+            var plan = await EvaluateRequestAsync(request, installedApps, wingetAvailable, chocolateyAvailable, index, requests.Count, log, progress);
+            plans.Add(plan);
+
+            if (plan.ImmediateResult is not null)
             {
-                log?.Report($"Package check: {request.DisplayName} is already installed. Skipping install.");
-                result.Results.Add(new PackageInstallResult
-                {
-                    DisplayName = request.DisplayName,
-                    Status = "AlreadyInstalled",
-                    Manager = "Detected",
-                    PackageId = request.WingetId ?? request.ChocolateyId ?? string.Empty,
-                    Message = "Already installed on this machine."
-                });
-                continue;
+                result.Results.Add(plan.ImmediateResult);
             }
+        }
 
-            var managerResult = await TryInstallWithAvailableManagersAsync(request, index, requests.Count, progress, log);
+        var installQueue = plans.Where(plan => plan.ShouldInstall).ToList();
+        log?.Report($"Check complete. Ready to install: {installQueue.Count}. Already installed: {result.AlreadyInstalledCount}. Skipped: {result.SkippedCount}. Not found: {result.NotFoundCount}.");
 
-            if (string.Equals(managerResult.Status, "Installed", StringComparison.OrdinalIgnoreCase))
+        if (installQueue.Count == 0)
+        {
+            ReportOverall(progress, "Package restore", "No apps needed installation after checks.", null, 100d, requests.Count, requests.Count, false);
+            log?.Report("Package restore completed. Nothing left to install.");
+            return result;
+        }
+
+        for (var installIndex = 0; installIndex < installQueue.Count; installIndex++)
+        {
+            var plan = installQueue[installIndex];
+            var request = plan.Request;
+
+            ReportInstall(progress, $"Installing apps ({installIndex + 1}/{installQueue.Count})", $"Installing {request.DisplayName}", request.DisplayName, installIndex, installQueue.Count, true);
+            log?.Report($"Installing {request.DisplayName} using {plan.PrimaryManager} ({plan.PrimaryPackageId}).");
+
+            var installResult = await InstallResolvedPackageAsync(plan, log);
+            if (string.Equals(installResult.Status, "Installed", StringComparison.OrdinalIgnoreCase))
             {
-                log?.Report($"Refreshing installed app inventory after installing {request.DisplayName}.");
-                installedApps = await RefreshInstalledAppsAsync(discovery, progress, request, index, requests.Count);
+                log?.Report($"Verifying installation for {request.DisplayName}.");
+                installedApps = await RefreshInstalledAppsAsync(discovery, progress, request, installIndex, installQueue.Count);
                 if (!IsAlreadyInstalled(request, installedApps))
                 {
-                    managerResult = new PackageInstallResult
+                    installResult = new PackageInstallResult
                     {
                         DisplayName = request.DisplayName,
-                        Status = "Warning",
-                        Manager = managerResult.Manager,
-                        PackageId = managerResult.PackageId,
-                        Message = $"{managerResult.Manager} reported success, but the app could not be detected after install."
+                        Status = "Failed",
+                        Manager = installResult.Manager,
+                        PackageId = installResult.PackageId,
+                        Message = $"{installResult.Manager} reported success, but the app could not be detected after install."
                     };
                 }
             }
 
-            result.Results.Add(managerResult);
+            result.Results.Add(installResult);
         }
 
-        Report(progress, "Package restore", "Package restore completed.", null, requests.Count, requests.Count, false);
-        log?.Report($"Package restore completed. Installed: {result.InstalledCount}, already installed: {result.AlreadyInstalledCount}, warnings: {result.WarningCount}");
+        ReportOverall(progress, "Package restore", "Package restore completed.", null, 100d, requests.Count, requests.Count, false);
+        log?.Report($"Package restore completed. Installed: {result.InstalledCount}, already installed: {result.AlreadyInstalledCount}, not found: {result.NotFoundCount}, skipped: {result.SkippedCount}, failed: {result.FailedCount}.");
         return result;
     }
 
-    private async Task<PackageInstallResult> TryInstallWithAvailableManagersAsync(PackageInstallRequest request, int index, int total, IProgress<MigrationProgressInfo>? progress, IProgress<string>? log)
+    private PackageInstallRequest NormalizeRequest(PackageInstallRequest request)
     {
-        if (_winGetService.IsAvailable())
+        if (!string.IsNullOrWhiteSpace(request.AppId))
         {
-            var winGetResult = await TryInstallWithWinGetAsync(request, index, total, progress, log);
-            if (string.Equals(winGetResult.Status, "Installed", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(winGetResult.Status, "AlreadyInstalled", StringComparison.OrdinalIgnoreCase))
+            var rule = _ruleRepository.GetById(request.AppId);
+            if (rule is not null)
             {
-                return winGetResult;
+                request.WingetId ??= string.IsNullOrWhiteSpace(rule.WingetId) ? null : rule.WingetId;
+                request.ChocolateyId ??= string.IsNullOrWhiteSpace(rule.ChocolateyId) ? null : rule.ChocolateyId;
+                request.Supported = request.Supported || rule.Supported;
+                request.RestoreStrategy = string.IsNullOrWhiteSpace(request.RestoreStrategy) ? rule.RestoreStrategy : request.RestoreStrategy;
+            }
+        }
+
+        if (!request.Supported && !string.IsNullOrWhiteSpace(request.RestoreStrategy) && !string.Equals(request.RestoreStrategy, "unsupported", StringComparison.OrdinalIgnoreCase))
+        {
+            request.Supported = true;
+        }
+
+        return request;
+    }
+
+    private async Task<PackageInstallPlan> EvaluateRequestAsync(PackageInstallRequest request, IReadOnlyList<DiscoveredApp> installedApps, bool wingetAvailable, bool chocolateyAvailable, int index, int total, IProgress<string>? log, IProgress<MigrationProgressInfo>? progress)
+    {
+        if (IsAlreadyInstalled(request, installedApps))
+        {
+            log?.Report($"Check: {request.DisplayName} is already installed.");
+            return PackageInstallPlan.FromImmediate(request, new PackageInstallResult
+            {
+                DisplayName = request.DisplayName,
+                Status = "AlreadyInstalled",
+                Manager = "Detected",
+                PackageId = request.WingetId ?? request.ChocolateyId ?? string.Empty,
+                Message = "Already installed on this machine."
+            });
+        }
+
+        var hasKnownPackageId = !string.IsNullOrWhiteSpace(request.WingetId) || !string.IsNullOrWhiteSpace(request.ChocolateyId);
+        var canSearchByName = request.Supported || hasKnownPackageId;
+        if (!canSearchByName)
+        {
+            log?.Report($"Check: {request.DisplayName} is not supported for auto reinstall. Skipping.");
+            return PackageInstallPlan.FromImmediate(request, new PackageInstallResult
+            {
+                DisplayName = request.DisplayName,
+                Status = "Skipped",
+                Manager = "None",
+                PackageId = string.Empty,
+                Message = "Unsupported app entry. No known package source, so it was skipped."
+            });
+        }
+
+        var wingetId = request.WingetId;
+        var chocolateyId = request.ChocolateyId;
+
+        if (string.IsNullOrWhiteSpace(wingetId) && wingetAvailable)
+        {
+            ReportCheck(progress, $"Checking apps ({index + 1}/{total})", $"Searching WinGet for {request.DisplayName}", request.DisplayName, index, total, false);
+            var lookup = await _winGetService.FindPackageIdByNameAsync(request.DisplayName, BuildFilteredLog(log, "WinGet"));
+            if (lookup.Found && !string.IsNullOrWhiteSpace(lookup.PackageId))
+            {
+                wingetId = lookup.PackageId;
+                log?.Report($"Check: found WinGet package for {request.DisplayName}: {wingetId}");
+            }
+            else
+            {
+                log?.Report($"Check: WinGet did not find a package for {request.DisplayName}.");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(chocolateyId) && chocolateyAvailable)
+        {
+            ReportCheck(progress, $"Checking apps ({index + 1}/{total})", $"Searching Chocolatey for {request.DisplayName}", request.DisplayName, index, total, false);
+            var lookup = await _chocolateyService.FindPackageIdByNameAsync(request.DisplayName, BuildFilteredLog(log, "Chocolatey"));
+            if (lookup.Found && !string.IsNullOrWhiteSpace(lookup.PackageId))
+            {
+                chocolateyId = lookup.PackageId;
+                log?.Report($"Check: found Chocolatey package for {request.DisplayName}: {chocolateyId}");
+            }
+            else
+            {
+                log?.Report($"Check: Chocolatey did not find a package for {request.DisplayName}.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(wingetId) || !string.IsNullOrWhiteSpace(chocolateyId))
+        {
+            request.WingetId = wingetId;
+            request.ChocolateyId = chocolateyId;
+
+            var plan = new PackageInstallPlan { Request = request };
+            if (!string.IsNullOrWhiteSpace(wingetId))
+            {
+                plan.PrimaryManager = "WinGet";
+                plan.PrimaryPackageId = wingetId;
+                plan.SecondaryManager = !string.IsNullOrWhiteSpace(chocolateyId) ? "Chocolatey" : null;
+                plan.SecondaryPackageId = chocolateyId;
+            }
+            else
+            {
+                plan.PrimaryManager = "Chocolatey";
+                plan.PrimaryPackageId = chocolateyId!;
             }
 
-            log?.Report($"WinGet could not complete {request.DisplayName}. {(string.IsNullOrWhiteSpace(winGetResult.Message) ? string.Empty : winGetResult.Message)}".Trim());
+            return plan;
         }
 
-        if (_chocolateyService.IsAvailable())
-        {
-            return await TryInstallWithChocolateyAsync(request, index, total, progress, log);
-        }
-
-        return new PackageInstallResult
+        log?.Report($"Check: no package source found for {request.DisplayName}. Skipping.");
+        return PackageInstallPlan.FromImmediate(request, new PackageInstallResult
         {
             DisplayName = request.DisplayName,
-            Status = "Warning",
+            Status = "NotFound",
             Manager = "None",
             PackageId = string.Empty,
-            Message = "No available package manager could install this app."
-        };
+            Message = "No matching package source was found. Skipped."
+        });
     }
 
-    private async Task<PackageInstallResult> TryInstallWithWinGetAsync(PackageInstallRequest request, int index, int total, IProgress<MigrationProgressInfo>? progress, IProgress<string>? log)
+    private async Task<PackageInstallResult> InstallResolvedPackageAsync(PackageInstallPlan plan, IProgress<string>? log)
     {
-        var packageId = request.WingetId;
-        if (string.IsNullOrWhiteSpace(packageId) && !string.IsNullOrWhiteSpace(request.AppId))
+        var primaryResult = await InstallWithManagerAsync(plan.Request, plan.PrimaryManager!, plan.PrimaryPackageId!, log);
+        if (string.Equals(primaryResult.Status, "Installed", StringComparison.OrdinalIgnoreCase))
         {
-            packageId = _ruleRepository.GetById(request.AppId)?.WingetId;
+            return primaryResult;
         }
 
-        if (string.IsNullOrWhiteSpace(packageId))
+        if (!string.IsNullOrWhiteSpace(plan.SecondaryManager) && !string.IsNullOrWhiteSpace(plan.SecondaryPackageId))
         {
-            Report(progress, "Package restore", $"Searching WinGet for {request.DisplayName}", request.DisplayName, index, total, false);
-            log?.Report($"Searching WinGet for {request.DisplayName}.");
-            var lookup = await _winGetService.FindPackageIdByNameAsync(request.DisplayName, new Progress<string>(line => log?.Report($"WinGet: {line}")));
-            if (!lookup.Found || string.IsNullOrWhiteSpace(lookup.PackageId))
+            log?.Report($"Primary install path failed for {plan.Request.DisplayName}. Trying {plan.SecondaryManager} fallback.");
+            var secondaryResult = await InstallWithManagerAsync(plan.Request, plan.SecondaryManager!, plan.SecondaryPackageId!, log);
+            if (string.Equals(secondaryResult.Status, "Installed", StringComparison.OrdinalIgnoreCase))
             {
-                return new PackageInstallResult
-                {
-                    DisplayName = request.DisplayName,
-                    Status = "Warning",
-                    Manager = "WinGet",
-                    PackageId = string.Empty,
-                    Message = string.IsNullOrWhiteSpace(lookup.Message) ? "WinGet package was not found." : lookup.Message
-                };
+                return secondaryResult;
             }
 
-            packageId = lookup.PackageId;
-            log?.Report(lookup.Message);
+            return new PackageInstallResult
+            {
+                DisplayName = plan.Request.DisplayName,
+                Status = "Failed",
+                Manager = $"{primaryResult.Manager} -> {secondaryResult.Manager}",
+                PackageId = string.Join(" | ", new[] { primaryResult.PackageId, secondaryResult.PackageId }.Where(x => !string.IsNullOrWhiteSpace(x))),
+                Message = string.Join(" | ", new[] { primaryResult.Message, secondaryResult.Message }.Where(x => !string.IsNullOrWhiteSpace(x)))
+            };
         }
 
-        Report(progress, "Package restore", $"Installing {request.DisplayName} with WinGet", request.DisplayName, index, total, true);
-        log?.Report($"Installing {request.DisplayName} with WinGet ({packageId}).");
-        var install = await _winGetService.InstallWithRecoveryAsync(packageId, new Progress<string>(line => log?.Report($"WinGet: {line}")));
-        if (!install.Succeeded)
+        primaryResult.Status = "Failed";
+        return primaryResult;
+    }
+
+    private async Task<PackageInstallResult> InstallWithManagerAsync(PackageInstallRequest request, string manager, string packageId, IProgress<string>? log)
+    {
+        if (string.Equals(manager, "WinGet", StringComparison.OrdinalIgnoreCase))
         {
+            var install = await _winGetService.InstallWithRecoveryAsync(packageId, BuildFilteredLog(log, "WinGet"));
             return new PackageInstallResult
             {
                 DisplayName = request.DisplayName,
-                Status = "Warning",
+                Status = install.Succeeded ? "Installed" : "Failed",
                 Manager = "WinGet",
                 PackageId = packageId,
-                Message = install.Message
+                Message = string.IsNullOrWhiteSpace(install.Message)
+                    ? (install.Succeeded ? "Installed successfully with WinGet." : "WinGet install failed.")
+                    : install.Message
             };
         }
 
+        var chocolateyInstall = await _chocolateyService.InstallByIdAsync(packageId, BuildFilteredLog(log, "Chocolatey"));
         return new PackageInstallResult
         {
             DisplayName = request.DisplayName,
-            Status = "Installed",
-            Manager = "WinGet",
-            PackageId = packageId,
-            Message = string.IsNullOrWhiteSpace(install.Message) ? "Installed successfully with WinGet." : install.Message
-        };
-    }
-
-    private async Task<PackageInstallResult> TryInstallWithChocolateyAsync(PackageInstallRequest request, int index, int total, IProgress<MigrationProgressInfo>? progress, IProgress<string>? log)
-    {
-        var packageId = request.ChocolateyId;
-        if (string.IsNullOrWhiteSpace(packageId) && !string.IsNullOrWhiteSpace(request.AppId))
-        {
-            packageId = _ruleRepository.GetById(request.AppId)?.ChocolateyId;
-        }
-
-        if (string.IsNullOrWhiteSpace(packageId))
-        {
-            Report(progress, "Package restore", $"Searching Chocolatey for {request.DisplayName}", request.DisplayName, index, total, false);
-            log?.Report($"Searching Chocolatey for {request.DisplayName}.");
-            var lookup = await _chocolateyService.FindPackageIdByNameAsync(request.DisplayName, new Progress<string>(line => log?.Report($"Chocolatey: {line}")));
-            if (!lookup.Found || string.IsNullOrWhiteSpace(lookup.PackageId))
-            {
-                return new PackageInstallResult
-                {
-                    DisplayName = request.DisplayName,
-                    Status = "Warning",
-                    Manager = "Chocolatey",
-                    PackageId = string.Empty,
-                    Message = string.IsNullOrWhiteSpace(lookup.Message) ? "Chocolatey package was not found." : lookup.Message
-                };
-            }
-
-            packageId = lookup.PackageId;
-            log?.Report(lookup.Message);
-        }
-
-        Report(progress, "Package restore", $"Installing {request.DisplayName} with Chocolatey", request.DisplayName, index, total, true);
-        log?.Report($"Installing {request.DisplayName} with Chocolatey ({packageId}).");
-        var install = await _chocolateyService.InstallByIdAsync(packageId, new Progress<string>(line => log?.Report($"Chocolatey: {line}")));
-        if (!install.Succeeded)
-        {
-            return new PackageInstallResult
-            {
-                DisplayName = request.DisplayName,
-                Status = "Warning",
-                Manager = "Chocolatey",
-                PackageId = packageId,
-                Message = install.Message
-            };
-        }
-
-        return new PackageInstallResult
-        {
-            DisplayName = request.DisplayName,
-            Status = "Installed",
+            Status = chocolateyInstall.Succeeded ? "Installed" : "Failed",
             Manager = "Chocolatey",
             PackageId = packageId,
-            Message = string.IsNullOrWhiteSpace(install.Message) ? "Installed successfully with Chocolatey." : install.Message
+            Message = string.IsNullOrWhiteSpace(chocolateyInstall.Message)
+                ? (chocolateyInstall.Succeeded ? "Installed successfully with Chocolatey." : "Chocolatey install failed.")
+                : chocolateyInstall.Message
         };
     }
 
-    private async Task<List<DiscoveredApp>> RefreshInstalledAppsAsync(AppDiscoveryService discovery, IProgress<MigrationProgressInfo>? progress, PackageInstallRequest request, int index, int total)
+    private static IProgress<string>? BuildFilteredLog(IProgress<string>? log, string prefix)
+    {
+        if (log is null)
+        {
+            return null;
+        }
+
+        string? lastLine = null;
+        return new Progress<string>(line =>
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                return;
+            }
+
+            var cleaned = line.Trim();
+            if (string.Equals(cleaned, lastLine, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            lastLine = cleaned;
+            log.Report($"{prefix}: {cleaned}");
+        });
+    }
+
+    private async Task<List<DiscoveredApp>> RefreshInstalledAppsAsync(AppDiscoveryService discovery, IProgress<MigrationProgressInfo>? progress, PackageInstallRequest request, int installIndex, int installTotal)
     {
         List<DiscoveredApp> latest = new();
-        for (var attempt = 1; attempt <= 3; attempt++)
+        for (var attempt = 1; attempt <= 2; attempt++)
         {
-            Report(progress, "Package restore", $"Verifying installation for {request.DisplayName} (attempt {attempt}/3)", request.DisplayName, index, total, false);
+            ReportInstall(progress, $"Installing apps ({Math.Min(installIndex + 1, installTotal)}/{installTotal})", $"Verifying {request.DisplayName} (attempt {attempt}/2)", request.DisplayName, installIndex, installTotal, false);
             await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
             latest = await discovery.DiscoverAsync();
             if (IsAlreadyInstalled(request, latest))
@@ -299,6 +384,7 @@ public sealed class PackageRestoreService
         var builder = new StringBuilder();
         builder.AppendLine($"Package restore report - {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         builder.AppendLine($"Tool: {AppMetadata.DisplayTitle}");
+        builder.AppendLine($"Installed: {result.InstalledCount} | Already installed: {result.AlreadyInstalledCount} | Not found: {result.NotFoundCount} | Skipped: {result.SkippedCount} | Failed: {result.FailedCount}");
         builder.AppendLine();
 
         foreach (var entry in result.Results)
@@ -309,18 +395,49 @@ public sealed class PackageRestoreService
         return builder.ToString();
     }
 
-    private static void Report(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, int processedItems, int totalItems, bool isIndeterminate)
+    private static void ReportCheck(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, int processedItems, int totalItems, bool isIndeterminate)
     {
-        var percent = totalItems == 0 ? 0 : Math.Min(100d, (double)processedItems / totalItems * 100d);
+        var fraction = totalItems == 0 ? 0d : (double)Math.Min(processedItems + 1, totalItems) / totalItems;
+        var percent = CheckPhaseWeight * fraction;
+        ReportOverall(progress, stage, message, currentApp, percent, processedItems + 1, totalItems, isIndeterminate);
+    }
+
+    private static void ReportInstall(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, int processedItems, int totalItems, bool isIndeterminate)
+    {
+        var fraction = totalItems == 0 ? 1d : (double)Math.Min(processedItems, totalItems) / totalItems;
+        var percent = CheckPhaseWeight + (InstallPhaseWeight * fraction);
+        ReportOverall(progress, stage, message, currentApp, percent, processedItems, totalItems, isIndeterminate);
+    }
+
+    private static void ReportOverall(IProgress<MigrationProgressInfo>? progress, string stage, string message, string? currentApp, double percent, int processedItems, int totalItems, bool isIndeterminate)
+    {
         progress?.Report(new MigrationProgressInfo
         {
             Stage = stage,
             Message = message,
             CurrentApp = currentApp,
-            Percent = percent,
+            Percent = Math.Min(100d, Math.Max(0d, percent)),
             ProcessedItems = processedItems,
             TotalItems = totalItems,
             IsIndeterminate = isIndeterminate
         });
+    }
+
+    private sealed class PackageInstallPlan
+    {
+        public PackageInstallRequest Request { get; set; } = new();
+        public PackageInstallResult? ImmediateResult { get; set; }
+        public string? PrimaryManager { get; set; }
+        public string? PrimaryPackageId { get; set; }
+        public string? SecondaryManager { get; set; }
+        public string? SecondaryPackageId { get; set; }
+        public bool ShouldInstall => ImmediateResult is null && !string.IsNullOrWhiteSpace(PrimaryManager) && !string.IsNullOrWhiteSpace(PrimaryPackageId);
+
+        public static PackageInstallPlan FromImmediate(PackageInstallRequest request, PackageInstallResult result)
+            => new()
+            {
+                Request = request,
+                ImmediateResult = result
+            };
     }
 }

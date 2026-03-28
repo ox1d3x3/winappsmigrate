@@ -342,8 +342,8 @@ public partial class MainWindow : Window
             var reportPath = Path.Combine(Path.GetDirectoryName(dialog.FileName)!, $"{Path.GetFileNameWithoutExtension(dialog.FileName)}.install_report.txt");
             await File.WriteAllTextAsync(reportPath, PackageRestoreService.BuildReport(result));
 
-            Log($"App reinstall completed. Installed: {result.InstalledCount}, already installed: {result.AlreadyInstalledCount}, warnings: {result.WarningCount}");
-            MessageBox.Show(this, $"App reinstall completed.\n\nInstalled: {result.InstalledCount}\nAlready installed: {result.AlreadyInstalledCount}\nWarnings: {result.WarningCount}\nReport: {reportPath}", "App reinstall complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            Log($"App reinstall completed. Installed: {result.InstalledCount}, already installed: {result.AlreadyInstalledCount}, not found: {result.NotFoundCount}, skipped: {result.SkippedCount}, failed: {result.FailedCount}");
+            MessageBox.Show(this, $"App reinstall completed.\n\nInstalled: {result.InstalledCount}\nAlready installed: {result.AlreadyInstalledCount}\nNot found: {result.NotFoundCount}\nSkipped: {result.SkippedCount}\nFailed: {result.FailedCount}\nReport: {reportPath}", "App reinstall complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

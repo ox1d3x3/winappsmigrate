@@ -74,6 +74,7 @@ public sealed class RestoreService
                             DisplayName = app.DisplayName,
                             Version = app.Version,
                             RestoreStrategy = app.RestoreStrategy,
+                            Supported = !string.Equals(app.RestoreStrategy, "unsupported", StringComparison.OrdinalIgnoreCase),
                             WingetId = app.WingetId,
                             ChocolateyId = app.ChocolateyId
                         })
