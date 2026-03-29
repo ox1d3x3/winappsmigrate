@@ -1,0 +1,7 @@
+C:\Users\TAMGG\Downloads\test_build\AppMigrator.UI.pdb
+C:\Users\TAMGG\Downloads\test_build\D3DCompiler_47_cor3.dll
+C:\Users\TAMGG\Downloads\test_build\PenImc_cor3.dll
+C:\Users\TAMGG\Downloads\test_build\PresentationNative_cor3.dll
+C:\Users\TAMGG\Downloads\test_build\vcruntime140_cor3.dll
+C:\Users\TAMGG\Downloads\test_build\wpfgfx_cor3.dll
+C:\Users\TAMGG\Downloads\test_build\AppMigrator.UI.exe
