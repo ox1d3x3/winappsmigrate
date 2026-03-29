@@ -13,6 +13,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Windows.Media;
 using AppMigrator.UI.Models;
 using AppMigrator.UI.Services;
 using MaterialDesignThemes.Wpf;
@@ -31,8 +32,14 @@ public partial class MainWindow : Window
     private readonly ProcessMonitorService _processMonitorService;
     private readonly UpdateService _updateService = new();
     private readonly UserSettingsService _userSettingsService = new();
+    private readonly ConnectivityService _connectivityService = new();
+    private readonly DispatcherTimer _networkStatusTimer = new();
     private DateTime _lastProgressStamp = DateTime.UtcNow;
     private long _lastProgressBytes;
+    private DateTime _lastProgressUiUpdate = DateTime.MinValue;
+    private string? _lastLogMessage;
+    private DateTime _lastLogStamp = DateTime.MinValue;
+    private MigrationProgressInfo? _lastProgressInfo;
     private bool _themeLoaded;
     private string _currentTheme = "Light";
     private readonly ICollectionView _appsView;
@@ -52,6 +59,8 @@ public partial class MainWindow : Window
         _appsView.SortDescriptions.Add(new SortDescription(nameof(DiscoveredApp.Supported), ListSortDirection.Descending));
         _appsView.SortDescriptions.Add(new SortDescription(nameof(DiscoveredApp.DisplayName), ListSortDirection.Ascending));
         Loaded += MainWindow_Loaded;
+        _networkStatusTimer.Interval = TimeSpan.FromSeconds(5);
+        _networkStatusTimer.Tick += async (_, _) => await RefreshNetworkStatusAsync();
 
         ApplyTheme("Light");
         UpdateSummary();
@@ -65,6 +74,8 @@ public partial class MainWindow : Window
         var desiredTheme = string.Equals(settings.Theme, "Dark", StringComparison.OrdinalIgnoreCase) ? "Dark" : "Light";
         ApplyTheme(desiredTheme);
         _themeLoaded = true;
+        await RefreshNetworkStatusAsync();
+        _networkStatusTimer.Start();
     }
 
     private bool AppFilter(object item)
@@ -335,7 +346,22 @@ public partial class MainWindow : Window
         {
             SetBusyState(true);
             ResetProgress();
+            HandleProgress(new MigrationProgressInfo
+            {
+                Stage = "Package restore",
+                Message = "Loading XML and checking network connectivity",
+                Percent = 1,
+                IsIndeterminate = true
+            });
+            await Task.Yield();
             Log($"Starting app reinstall from XML: {dialog.FileName}");
+
+            var network = await _connectivityService.GetStatusAsync(includeInternetProbe: true);
+            UpdateNetworkStatusUi(network);
+            if (!network.HasInternetAccess)
+            {
+                throw new InvalidOperationException("Network check failed. Connect this PC to the internet before restoring apps from XML.");
+            }
 
             var packageRestoreService = new PackageRestoreService(_ruleRepository, _winGetService, _chocolateyService);
             var result = await packageRestoreService.RestoreFromXmlAsync(dialog.FileName, new Progress<MigrationProgressInfo>(HandleProgress), new Progress<string>(Log));
@@ -525,6 +551,7 @@ public partial class MainWindow : Window
         LogTextBox.CaretBrush = (System.Windows.Media.Brush)Resources["TextStrongBrush"];
         ThemeToggleIcon.Kind = dark ? PackIconKind.WeatherSunny : PackIconKind.WeatherNight;
         ThemeToggleButton.ToolTip = dark ? "Switch to light theme" : "Switch to dark theme";
+        _ = RefreshNetworkStatusAsync();
     }
 
     private void SetBrush(string resourceKey, string color)
@@ -554,10 +581,25 @@ public partial class MainWindow : Window
     {
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.Invoke(() => HandleProgress(info), DispatcherPriority.Background);
+            _ = Dispatcher.BeginInvoke(new Action(() => HandleProgress(info)), DispatcherPriority.Background);
             return;
         }
 
+        var now = DateTime.UtcNow;
+        var materiallyChanged = _lastProgressInfo is null
+            || !string.Equals(_lastProgressInfo.Stage, info.Stage, StringComparison.Ordinal)
+            || !string.Equals(_lastProgressInfo.Message, info.Message, StringComparison.Ordinal)
+            || !string.Equals(_lastProgressInfo.CurrentApp, info.CurrentApp, StringComparison.Ordinal)
+            || Math.Abs(_lastProgressInfo.Percent - info.Percent) >= 0.5d
+            || _lastProgressInfo.IsIndeterminate != info.IsIndeterminate;
+
+        if (!materiallyChanged && (now - _lastProgressUiUpdate) < TimeSpan.FromMilliseconds(120))
+        {
+            return;
+        }
+
+        _lastProgressUiUpdate = now;
+        _lastProgressInfo = info;
         OperationProgressBar.IsIndeterminate = info.IsIndeterminate;
         if (!info.IsIndeterminate)
         {
@@ -568,7 +610,6 @@ public partial class MainWindow : Window
         ProgressMessageTextBlock.Text = info.Message;
         CurrentAppTextBlock.Text = string.IsNullOrWhiteSpace(info.CurrentApp) ? "—" : info.CurrentApp;
 
-        var now = DateTime.UtcNow;
         var deltaBytes = Math.Max(0, info.ProcessedBytes - _lastProgressBytes);
         var deltaSeconds = Math.Max((now - _lastProgressStamp).TotalSeconds, 0.25d);
         var bytesPerSecond = deltaBytes / deltaSeconds;
@@ -581,11 +622,11 @@ public partial class MainWindow : Window
             if (bytesPerSecond > 0 && info.TotalBytes > info.ProcessedBytes)
             {
                 var etaSeconds = (info.TotalBytes - info.ProcessedBytes) / bytesPerSecond;
-                EtaTextBlock.Text = $"ETA: {TimeSpan.FromSeconds(etaSeconds):mm\\:ss}  •  {FormatBytes((long)bytesPerSecond)}/s";
+                EtaTextBlock.Text = $"ETA: {TimeSpan.FromSeconds(etaSeconds):mm\\:ss}  |  {FormatBytes((long)bytesPerSecond)}/s";
             }
             else
             {
-                EtaTextBlock.Text = info.IsIndeterminate ? "Package manager is working…" : "ETA: --";
+                EtaTextBlock.Text = info.IsIndeterminate ? "Package manager is working..." : "ETA: --";
             }
 
             return;
@@ -594,12 +635,12 @@ public partial class MainWindow : Window
         if (info.TotalItems > 0)
         {
             TransferStatsTextBlock.Text = $"Apps: {Math.Min(info.ProcessedItems, info.TotalItems)} / {info.TotalItems}";
-            EtaTextBlock.Text = info.IsIndeterminate ? "Installing package manager task…" : "Phase progress tracked by app count.";
+            EtaTextBlock.Text = info.IsIndeterminate ? "Checking or installing apps..." : "Phase progress tracked by app count.";
             return;
         }
 
-        TransferStatsTextBlock.Text = "Waiting for progress…";
-        EtaTextBlock.Text = info.IsIndeterminate ? "Working…" : "ETA: --";
+        TransferStatsTextBlock.Text = "Waiting for progress...";
+        EtaTextBlock.Text = info.IsIndeterminate ? "Working..." : "ETA: --";
     }
 
     private void ResetProgress()
@@ -613,18 +654,61 @@ public partial class MainWindow : Window
         EtaTextBlock.Text = "ETA: --";
         _lastProgressStamp = DateTime.UtcNow;
         _lastProgressBytes = 0;
+        _lastProgressUiUpdate = DateTime.MinValue;
+        _lastProgressInfo = null;
     }
 
     private void Log(string message)
     {
-        if (!Dispatcher.CheckAccess())
+        if (string.IsNullOrWhiteSpace(message))
         {
-            Dispatcher.Invoke(() => Log(message), DispatcherPriority.Background);
             return;
         }
 
-        LogTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+        if (!Dispatcher.CheckAccess())
+        {
+            _ = Dispatcher.BeginInvoke(new Action(() => Log(message)), DispatcherPriority.Background);
+            return;
+        }
+
+        var cleaned = message.Trim();
+        var now = DateTime.UtcNow;
+        if (string.Equals(_lastLogMessage, cleaned, StringComparison.OrdinalIgnoreCase)
+            && (now - _lastLogStamp) < TimeSpan.FromSeconds(1.5))
+        {
+            return;
+        }
+
+        _lastLogMessage = cleaned;
+        _lastLogStamp = now;
+        LogTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {cleaned}{Environment.NewLine}");
         LogTextBox.ScrollToEnd();
+    }
+
+    private async Task RefreshNetworkStatusAsync()
+    {
+        var snapshot = await _connectivityService.GetStatusAsync();
+        UpdateNetworkStatusUi(snapshot);
+    }
+
+    private void UpdateNetworkStatusUi(ConnectivitySnapshot snapshot)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            _ = Dispatcher.BeginInvoke(new Action(() => UpdateNetworkStatusUi(snapshot)), DispatcherPriority.Background);
+            return;
+        }
+
+        var isConnected = snapshot.HasInternetAccess || snapshot.IsNetworkAvailable;
+        var badgeColor = (Color)ColorConverter.ConvertFromString(isConnected ? "#DCF6E7" : "#FDE7E9");
+        var iconColor = (Color)ColorConverter.ConvertFromString(isConnected ? "#0E6A45" : "#B42318");
+
+        NetworkStatusIconBadge.Background = new SolidColorBrush(badgeColor);
+        NetworkStatusIcon.Foreground = new SolidColorBrush(iconColor);
+        NetworkStatusIcon.Kind = isConnected ? PackIconKind.LanConnect : PackIconKind.LanDisconnect;
+        NetworkStatusTextBlock.Text = snapshot.Summary;
+        NetworkStatusTextBlock.Foreground = new SolidColorBrush(iconColor);
+        NetworkStatusDetailTextBlock.Text = snapshot.Detail;
     }
 
     private void UpdateSummary()

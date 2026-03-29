@@ -11,10 +11,13 @@ namespace AppMigrator.UI.Services;
 public sealed class ChocolateyService
 {
     public bool IsAvailable()
+        => IsAvailableAsync().GetAwaiter().GetResult();
+
+    public async Task<bool> IsAvailableAsync()
     {
         try
         {
-            var result = RunAsync("--version", timeout: TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+            var result = await RunAsync("--version", timeout: TimeSpan.FromSeconds(6)).ConfigureAwait(false);
             return result.Succeeded;
         }
         catch
@@ -26,7 +29,7 @@ public sealed class ChocolateyService
     public async Task<(bool Succeeded, string Message)> InstallByIdAsync(string packageId, IProgress<string>? liveOutput = null)
     {
         var safeId = EscapeArg(packageId);
-        return await RunAsync($"install {safeId} -y --no-progress", liveOutput, TimeSpan.FromMinutes(20));
+        return await RunAsync($"install {safeId} -y --no-progress", liveOutput, TimeSpan.FromMinutes(15)).ConfigureAwait(false);
     }
 
     public async Task<(bool Found, string? PackageId, string Message)> FindPackageIdByNameAsync(string appName, IProgress<string>? liveOutput = null)
@@ -36,21 +39,32 @@ public sealed class ChocolateyService
             return (false, null, "App name is empty.");
         }
 
-        var exact = await RunAsync($"search \"{EscapeArg(appName)}\" --exact --limit-output", liveOutput, TimeSpan.FromSeconds(20));
-        var exactId = TryParsePackageId(exact.Message, appName);
+        var searchName = SimplifySearchName(appName);
+        var exact = await RunAsync($"search "{EscapeArg(searchName)}" --exact --limit-output", liveOutput, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+        var exactId = TryParsePackageId(exact.Message, searchName);
         if (exactId is not null)
         {
             return (true, exactId, $"Matched Chocolatey package: {exactId}");
         }
 
-        var broad = await RunAsync($"search \"{EscapeArg(appName)}\" --limit-output", liveOutput, TimeSpan.FromSeconds(20));
-        var broadId = TryParsePackageId(broad.Message, appName);
+        var broad = await RunAsync($"search "{EscapeArg(searchName)}" --limit-output", liveOutput, TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+        var broadId = TryParsePackageId(broad.Message, searchName);
         return broadId is not null
             ? (true, broadId, $"Matched Chocolatey package: {broadId}")
             : (false, null, string.IsNullOrWhiteSpace(broad.Message) ? exact.Message : broad.Message);
     }
 
-    private static string EscapeArg(string value) => value.Replace("\"", string.Empty);
+    private static string EscapeArg(string value) => value.Replace(""", string.Empty);
+
+    private static string SimplifySearchName(string value)
+    {
+        var simplified = value;
+        simplified = Regex.Replace(simplified, @"\([^\)]*\)", " ");
+        simplified = Regex.Replace(simplified, @"\d+(?:[\._@-]\d+)*", " ");
+        simplified = Regex.Replace(simplified, @"(x64|x86|arm64|en-us|en us|edition|portable|setup|installer|pro)", " ", RegexOptions.IgnoreCase);
+        simplified = Regex.Replace(simplified, @"\s+", " ").Trim();
+        return string.IsNullOrWhiteSpace(simplified) ? value.Trim() : simplified;
+    }
 
     private static string? TryParsePackageId(string rawOutput, string appName)
     {
@@ -58,7 +72,9 @@ public sealed class ChocolateyService
         var bestPackageId = default(string);
         var bestScore = 0;
 
-        foreach (var line in SanitizeMessage(rawOutput).Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var line in SanitizeMessage(rawOutput).Split(new[] { "
+", "
+" }, StringSplitOptions.RemoveEmptyEntries))
         {
             var parts = line.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (parts.Length == 0)
@@ -112,11 +128,12 @@ public sealed class ChocolateyService
             return string.Empty;
         }
 
-        var cleaned = raw.Replace("\r", string.Empty);
-        cleaned = Regex.Replace(cleaned, "\\x1B\\[[0-9;?]*[ -/]*[@-~]", string.Empty);
+        var cleaned = raw.Replace("", string.Empty);
+        cleaned = Regex.Replace(cleaned, "\x1B\[[0-9;?]*[ -/]*[@-~]", string.Empty);
 
         var builder = new StringBuilder();
-        foreach (var line in cleaned.Split('\n'))
+        foreach (var line in cleaned.Split('
+'))
         {
             var trimmed = line.Trim();
             if (string.IsNullOrWhiteSpace(trimmed))
@@ -169,7 +186,7 @@ public sealed class ChocolateyService
         var waitForExitTask = process.WaitForExitAsync();
         if (timeout.HasValue)
         {
-            var completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(timeout.Value));
+            var completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(timeout.Value)).ConfigureAwait(false);
             if (completedTask != waitForExitTask)
             {
                 TryKill(process);
@@ -177,7 +194,7 @@ public sealed class ChocolateyService
             }
         }
 
-        await waitForExitTask;
+        await waitForExitTask.ConfigureAwait(false);
 
         string message;
         lock (outputLines)
@@ -215,7 +232,7 @@ public sealed class ChocolateyService
             return string.Empty;
         }
 
-        var cleaned = Regex.Replace(rawLine.Trim(), "\\x1B\\[[0-9;?]*[ -/]*[@-~]", string.Empty).Trim();
+        var cleaned = Regex.Replace(rawLine.Trim(), "\x1B\[[0-9;?]*[ -/]*[@-~]", string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(cleaned))
         {
             return string.Empty;

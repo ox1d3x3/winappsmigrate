@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Win Apps Migrator v0.0.21"
+        Title="Win Apps Migrator v0.0.22"
         Width="1420"
         Height="840"
         MinWidth="1080"
@@ -537,7 +537,7 @@
                                 <TextBlock Margin="0,6,0,0"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            TextWrapping="Wrap"
-                                           Text="Check the latest release and jump to the project page."/>
+                                           Text="Check the latest release, jump to the project page, and verify online state for package restore."/>
                                 <Button x:Name="UpdateButton"
                                         Style="{StaticResource TonalButtonStyle}"
                                         Click="UpdateButton_Click"
@@ -555,6 +555,50 @@
                                         <TextBlock Text="Open releases page"/>
                                     </StackPanel>
                                 </Button>
+                                <Border Margin="0,10,0,0"
+                                        Background="{DynamicResource SurfaceAltBrush}"
+                                        BorderBrush="{DynamicResource StrokeBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Padding="10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="NetworkStatusIconBadge"
+                                                Width="28"
+                                                Height="28"
+                                                CornerRadius="10"
+                                                Background="{DynamicResource SuccessContainerBrush}"
+                                                VerticalAlignment="Top">
+                                            <materialDesign:PackIcon x:Name="NetworkStatusIcon"
+                                                                     Kind="LanConnect"
+                                                                     Width="16"
+                                                                     Height="16"
+                                                                     HorizontalAlignment="Center"
+                                                                     VerticalAlignment="Center"
+                                                                     Foreground="{DynamicResource SuccessTextBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Network Status"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock x:Name="NetworkStatusTextBlock"
+                                                       Margin="0,4,0,0"
+                                                       FontWeight="SemiBold"
+                                                       Text="Checking..."/>
+                                            <TextBlock x:Name="NetworkStatusDetailTextBlock"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
+                                                       TextWrapping="Wrap"
+                                                       FontSize="11.5"
+                                                       Text="Verifying network state."/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
                             </StackPanel>
                         </Border>
                     </StackPanel>
