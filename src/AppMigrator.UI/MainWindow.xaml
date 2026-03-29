@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Win Apps Migrator v0.0.22"
+        Title="Win Apps Migrator v0.0.23"
         Width="1420"
         Height="840"
         MinWidth="1080"

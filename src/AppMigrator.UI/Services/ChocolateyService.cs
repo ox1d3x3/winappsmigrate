@@ -10,6 +10,12 @@ namespace AppMigrator.UI.Services;
 
 public sealed class ChocolateyService
 {
+    private static readonly Regex AnsiRegex = new("\\x1B\\[[0-9;?]*[ -/]*[@-~]", RegexOptions.Compiled);
+    private static readonly Regex VersionRegex = new(@"\b\d+(?:[\._@-]\d+)*\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex DescriptorRegex = new(@"\b(x64|x86|arm64|en-us|en us|edition|portable|setup|installer|pro)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex ParenthesesRegex = new(@"\([^\)]*\)", RegexOptions.Compiled);
+    private static readonly Regex NonAlphaNumericRegex = new(@"[^a-zA-Z0-9]+", RegexOptions.Compiled);
+
     public bool IsAvailable()
         => IsAvailableAsync().GetAwaiter().GetResult();
 
@@ -40,28 +46,31 @@ public sealed class ChocolateyService
         }
 
         var searchName = SimplifySearchName(appName);
-        var exact = await RunAsync($"search "{EscapeArg(searchName)}" --exact --limit-output", liveOutput, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+
+        var exactArgs = $"search \"{EscapeArg(searchName)}\" --exact --limit-output";
+        var exact = await RunAsync(exactArgs, liveOutput, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
         var exactId = TryParsePackageId(exact.Message, searchName);
         if (exactId is not null)
         {
             return (true, exactId, $"Matched Chocolatey package: {exactId}");
         }
 
-        var broad = await RunAsync($"search "{EscapeArg(searchName)}" --limit-output", liveOutput, TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+        var broadArgs = $"search \"{EscapeArg(searchName)}\" --limit-output";
+        var broad = await RunAsync(broadArgs, liveOutput, TimeSpan.FromSeconds(10)).ConfigureAwait(false);
         var broadId = TryParsePackageId(broad.Message, searchName);
         return broadId is not null
             ? (true, broadId, $"Matched Chocolatey package: {broadId}")
             : (false, null, string.IsNullOrWhiteSpace(broad.Message) ? exact.Message : broad.Message);
     }
 
-    private static string EscapeArg(string value) => value.Replace(""", string.Empty);
+    private static string EscapeArg(string value) => value.Replace("\"", string.Empty);
 
     private static string SimplifySearchName(string value)
     {
         var simplified = value;
-        simplified = Regex.Replace(simplified, @"\([^\)]*\)", " ");
-        simplified = Regex.Replace(simplified, @"\d+(?:[\._@-]\d+)*", " ");
-        simplified = Regex.Replace(simplified, @"(x64|x86|arm64|en-us|en us|edition|portable|setup|installer|pro)", " ", RegexOptions.IgnoreCase);
+        simplified = ParenthesesRegex.Replace(simplified, " ");
+        simplified = VersionRegex.Replace(simplified, " ");
+        simplified = DescriptorRegex.Replace(simplified, " ");
         simplified = Regex.Replace(simplified, @"\s+", " ").Trim();
         return string.IsNullOrWhiteSpace(simplified) ? value.Trim() : simplified;
     }
@@ -72,9 +81,7 @@ public sealed class ChocolateyService
         var bestPackageId = default(string);
         var bestScore = 0;
 
-        foreach (var line in SanitizeMessage(rawOutput).Split(new[] { "
-", "
-" }, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var line in SanitizeMessage(rawOutput).Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
         {
             var parts = line.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (parts.Length == 0)
@@ -119,7 +126,7 @@ public sealed class ChocolateyService
     }
 
     private static string Normalize(string value)
-        => Regex.Replace(value, @"[^a-zA-Z0-9]+", " ").Trim().ToLowerInvariant();
+        => NonAlphaNumericRegex.Replace(value, " ").Trim().ToLowerInvariant();
 
     private static string SanitizeMessage(string raw)
     {
@@ -128,12 +135,11 @@ public sealed class ChocolateyService
             return string.Empty;
         }
 
-        var cleaned = raw.Replace("", string.Empty);
-        cleaned = Regex.Replace(cleaned, "\x1B\[[0-9;?]*[ -/]*[@-~]", string.Empty);
+        var cleaned = raw.Replace("\r", string.Empty);
+        cleaned = AnsiRegex.Replace(cleaned, string.Empty);
 
         var builder = new StringBuilder();
-        foreach (var line in cleaned.Split('
-'))
+        foreach (var line in cleaned.Split('\n'))
         {
             var trimmed = line.Trim();
             if (string.IsNullOrWhiteSpace(trimmed))
@@ -232,7 +238,7 @@ public sealed class ChocolateyService
             return string.Empty;
         }
 
-        var cleaned = Regex.Replace(rawLine.Trim(), "\x1B\[[0-9;?]*[ -/]*[@-~]", string.Empty).Trim();
+        var cleaned = AnsiRegex.Replace(rawLine.Trim(), string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(cleaned))
         {
             return string.Empty;

@@ -10,6 +10,15 @@ namespace AppMigrator.UI.Services;
 
 public sealed class WinGetService
 {
+    private static readonly Regex AnsiRegex = new("\\x1B\\[[0-9;?]*[ -/]*[@-~]", RegexOptions.Compiled);
+    private static readonly Regex SpinnerRegex = new(@"^[\|/\\-]+$", RegexOptions.Compiled);
+    private static readonly Regex ProgressBarRegex = new(@"^[\u2580-\u259F\s\.:%/\\-]+$", RegexOptions.Compiled);
+    private static readonly Regex MultiSpaceRegex = new(@"\s{2,}", RegexOptions.Compiled);
+    private static readonly Regex VersionRegex = new(@"\b\d+(?:[\._@-]\d+)*\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex DescriptorRegex = new(@"\b(x64|x86|arm64|en-us|en us|edition|portable|setup|installer|pro)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex ParenthesesRegex = new(@"\([^\)]*\)", RegexOptions.Compiled);
+    private static readonly Regex NonAlphaNumericRegex = new(@"[^a-zA-Z0-9]+", RegexOptions.Compiled);
+
     public bool IsAvailable()
         => IsAvailableAsync().GetAwaiter().GetResult();
 
@@ -46,8 +55,9 @@ public sealed class WinGetService
 
     public async Task<(bool Succeeded, string Message)> InstallByIdAsync(string packageId, IProgress<string>? liveOutput = null)
     {
-        var escapedPackageId = packageId.Replace(""", string.Empty);
-        return await RunAsync($"install --id "{escapedPackageId}" -e --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements", liveOutput, TimeSpan.FromMinutes(15)).ConfigureAwait(false);
+        var escapedPackageId = EscapeArg(packageId);
+        var args = $"install --id \"{escapedPackageId}\" -e --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements";
+        return await RunAsync(args, liveOutput, TimeSpan.FromMinutes(15)).ConfigureAwait(false);
     }
 
     public async Task<(bool Found, string? PackageId, string Message)> FindPackageIdByNameAsync(string appName, IProgress<string>? liveOutput = null)
@@ -58,14 +68,17 @@ public sealed class WinGetService
         }
 
         var searchName = SimplifySearchName(appName);
-        var exact = await RunAsync($"search --name "{EscapeArg(searchName)}" --exact --source winget --accept-source-agreements", liveOutput, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+
+        var exactArgs = $"search --name \"{EscapeArg(searchName)}\" --exact --source winget --accept-source-agreements";
+        var exact = await RunAsync(exactArgs, liveOutput, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
         var exactId = TryParsePackageId(exact.Message, searchName);
         if (exactId is not null)
         {
             return (true, exactId, $"Matched WinGet package: {exactId}");
         }
 
-        var broad = await RunAsync($"search "{EscapeArg(searchName)}" --source winget --accept-source-agreements", liveOutput, TimeSpan.FromSeconds(12)).ConfigureAwait(false);
+        var broadArgs = $"search \"{EscapeArg(searchName)}\" --source winget --accept-source-agreements";
+        var broad = await RunAsync(broadArgs, liveOutput, TimeSpan.FromSeconds(12)).ConfigureAwait(false);
         var broadId = TryParsePackageId(broad.Message, searchName);
         return broadId is not null
             ? (true, broadId, $"Matched WinGet package: {broadId}")
@@ -83,14 +96,14 @@ public sealed class WinGetService
            || message.Contains("Failed when searching source", StringComparison.OrdinalIgnoreCase)
            || message.Contains("0x8a15005e", StringComparison.OrdinalIgnoreCase);
 
-    private static string EscapeArg(string value) => value.Replace(""", string.Empty);
+    private static string EscapeArg(string value) => value.Replace("\"", string.Empty);
 
     private static string SimplifySearchName(string value)
     {
         var simplified = value;
-        simplified = Regex.Replace(simplified, @"\([^\)]*\)", " ");
-        simplified = Regex.Replace(simplified, @"\d+(?:[\._@-]\d+)*", " ");
-        simplified = Regex.Replace(simplified, @"(x64|x86|arm64|en-us|en us|edition|portable|setup|installer|pro)", " ", RegexOptions.IgnoreCase);
+        simplified = ParenthesesRegex.Replace(simplified, " ");
+        simplified = VersionRegex.Replace(simplified, " ");
+        simplified = DescriptorRegex.Replace(simplified, " ");
         simplified = Regex.Replace(simplified, @"\s+", " ").Trim();
         return string.IsNullOrWhiteSpace(simplified) ? value.Trim() : simplified;
     }
@@ -102,11 +115,9 @@ public sealed class WinGetService
         var bestScore = 0;
 
         var lines = SanitizeMessage(rawOutput)
-            .Split(new[] { "
-", "
-" }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim())
-            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim())
+            .Where(line => !string.IsNullOrWhiteSpace(line))
             .ToList();
 
         foreach (var line in lines)
@@ -114,12 +125,12 @@ public sealed class WinGetService
             if (line.StartsWith("Name", StringComparison.OrdinalIgnoreCase)
                 || line.StartsWith("-", StringComparison.OrdinalIgnoreCase)
                 || line.StartsWith("Found ", StringComparison.OrdinalIgnoreCase)
-                || line.Contains("Source", StringComparison.OrdinalIgnoreCase) && line.Contains("Id", StringComparison.OrdinalIgnoreCase))
+                || (line.Contains("Source", StringComparison.OrdinalIgnoreCase) && line.Contains("Id", StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }
 
-            var parts = Regex.Split(line, "\s{2,}").Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+            var parts = MultiSpaceRegex.Split(line).Where(part => !string.IsNullOrWhiteSpace(part)).ToArray();
             if (parts.Length < 2)
             {
                 continue;
@@ -168,7 +179,7 @@ public sealed class WinGetService
     }
 
     private static string Normalize(string value)
-        => Regex.Replace(value, @"[^a-zA-Z0-9]+", " ").Trim().ToLowerInvariant();
+        => NonAlphaNumericRegex.Replace(value, " ").Trim().ToLowerInvariant();
 
     private static string SanitizeMessage(string raw)
     {
@@ -177,12 +188,11 @@ public sealed class WinGetService
             return string.Empty;
         }
 
-        var cleaned = raw.Replace("", string.Empty);
-        cleaned = Regex.Replace(cleaned, "\x1B\[[0-9;?]*[ -/]*[@-~]", string.Empty);
+        var cleaned = raw.Replace("\r", string.Empty);
+        cleaned = AnsiRegex.Replace(cleaned, string.Empty);
 
         var builder = new StringBuilder();
-        foreach (var line in cleaned.Split('
-'))
+        foreach (var line in cleaned.Split('\n'))
         {
             var trimmed = line.Trim();
             if (string.IsNullOrWhiteSpace(trimmed))
@@ -190,7 +200,7 @@ public sealed class WinGetService
                 continue;
             }
 
-            if (Regex.IsMatch(trimmed, @"^[\|/\-]+$") || Regex.IsMatch(trimmed, @"^[▀-▟\s\.:%/\-]+$"))
+            if (SpinnerRegex.IsMatch(trimmed) || ProgressBarRegex.IsMatch(trimmed))
             {
                 continue;
             }
@@ -278,13 +288,13 @@ public sealed class WinGetService
             return string.Empty;
         }
 
-        var cleaned = Regex.Replace(rawLine.Trim(), "\x1B\[[0-9;?]*[ -/]*[@-~]", string.Empty).Trim();
+        var cleaned = AnsiRegex.Replace(rawLine.Trim(), string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(cleaned))
         {
             return string.Empty;
         }
 
-        if (Regex.IsMatch(cleaned, @"^[▀-▟\s\.:%/\-]+$"))
+        if (ProgressBarRegex.IsMatch(cleaned) || SpinnerRegex.IsMatch(cleaned))
         {
             return string.Empty;
         }
