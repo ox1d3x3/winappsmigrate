@@ -43,6 +43,8 @@ public partial class MainWindow : Window
     private bool _themeLoaded;
     private string _currentTheme = "Light";
     private readonly ICollectionView _appsView;
+    private bool _isBusy;
+    private string? _lastPackageRestoreXmlPath;
 
     public MainWindow()
     {
@@ -75,6 +77,7 @@ public partial class MainWindow : Window
         ApplyTheme(desiredTheme);
         _themeLoaded = true;
         await RefreshNetworkStatusAsync();
+        UpdateRetryActionButtons();
         _networkStatusTimer.Start();
     }
 
@@ -336,11 +339,40 @@ public partial class MainWindow : Window
             return;
         }
 
-        var confirm = MessageBox.Show(this, "Install apps from the selected XML using WinGet first and Chocolatey as fallback where possible?", "Confirm app restore", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes)
+        await RunPackageRestoreFromXmlAsync(dialog.FileName, askForConfirmation: true);
+    }
+
+    private async void RetryLastXmlRestoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_lastPackageRestoreXmlPath) || !File.Exists(_lastPackageRestoreXmlPath))
+        {
+            _lastPackageRestoreXmlPath = null;
+            UpdateRetryActionButtons();
+            MessageBox.Show(this, "No previous XML restore file is available. Select an XML file first.", "Retry unavailable", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        await RunPackageRestoreFromXmlAsync(_lastPackageRestoreXmlPath, askForConfirmation: false);
+    }
+
+    private async Task RunPackageRestoreFromXmlAsync(string xmlPath, bool askForConfirmation)
+    {
+        if (string.IsNullOrWhiteSpace(xmlPath))
         {
             return;
         }
+
+        if (askForConfirmation)
+        {
+            var confirm = MessageBox.Show(this, "Install apps from the selected XML using WinGet first and Chocolatey as fallback where possible?", "Confirm app restore", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.Yes)
+            {
+                return;
+            }
+        }
+
+        _lastPackageRestoreXmlPath = xmlPath;
+        UpdateRetryActionButtons();
 
         try
         {
@@ -349,23 +381,24 @@ public partial class MainWindow : Window
             HandleProgress(new MigrationProgressInfo
             {
                 Stage = "Package restore",
-                Message = "Loading XML and checking network connectivity",
+                Message = "Loading XML and preparing package restore",
                 Percent = 1,
                 IsIndeterminate = true
             });
             await Task.Yield();
-            Log($"Starting app reinstall from XML: {dialog.FileName}");
+            Log($"Starting app reinstall from XML: {xmlPath}");
 
-            var network = await _connectivityService.GetStatusAsync(includeInternetProbe: true);
-            UpdateNetworkStatusUi(network);
-            if (!network.HasInternetAccess)
+            var networkReady = await EnsurePackageRestoreConnectivityAsync();
+            if (!networkReady)
             {
-                throw new InvalidOperationException("Network check failed. Connect this PC to the internet before restoring apps from XML.");
+                Log("App reinstall cancelled before package checks started.");
+                ResetProgress();
+                return;
             }
 
             var packageRestoreService = new PackageRestoreService(_ruleRepository, _winGetService, _chocolateyService);
-            var result = await packageRestoreService.RestoreFromXmlAsync(dialog.FileName, new Progress<MigrationProgressInfo>(HandleProgress), new Progress<string>(Log));
-            var reportPath = Path.Combine(Path.GetDirectoryName(dialog.FileName)!, $"{Path.GetFileNameWithoutExtension(dialog.FileName)}.install_report.txt");
+            var result = await packageRestoreService.RestoreFromXmlAsync(xmlPath, new Progress<MigrationProgressInfo>(HandleProgress), new Progress<string>(Log));
+            var reportPath = Path.Combine(Path.GetDirectoryName(xmlPath)!, $"{Path.GetFileNameWithoutExtension(xmlPath)}.install_report.txt");
             await File.WriteAllTextAsync(reportPath, PackageRestoreService.BuildReport(result));
 
             Log($"App reinstall completed. Installed: {result.InstalledCount}, already installed: {result.AlreadyInstalledCount}, not found: {result.NotFoundCount}, skipped: {result.SkippedCount}, failed: {result.FailedCount}");
@@ -379,6 +412,75 @@ public partial class MainWindow : Window
         finally
         {
             SetBusyState(false);
+            UpdateRetryActionButtons();
+        }
+    }
+
+    private async Task<bool> EnsurePackageRestoreConnectivityAsync()
+    {
+        while (true)
+        {
+            HandleProgress(new MigrationProgressInfo
+            {
+                Stage = "Package restore",
+                Message = "Checking network connectivity",
+                Percent = 2,
+                IsIndeterminate = true
+            });
+
+            var network = await _connectivityService.GetStatusAsync(includeInternetProbe: true);
+            UpdateNetworkStatusUi(network);
+
+            if (network.HasInternetAccess)
+            {
+                Log($"Network check passed: {network.Detail}");
+                return true;
+            }
+
+            if (network.IsNetworkAvailable)
+            {
+                Log($"Network check warning: {network.Detail}");
+                var result = MessageBox.Show(
+                    this,
+                    $"An active network adapter was detected, but the internet check could not be fully verified.\n\n{network.Detail}\n\nYes = Retry check\nNo = Continue anyway\nCancel = Stop restore",
+                    "Internet check uncertain",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    continue;
+                }
+
+                return result == MessageBoxResult.No;
+            }
+
+            Log("Network check failed: no active network adapter detected.");
+            var retry = MessageBox.Show(
+                this,
+                "No active network adapter was detected. Connect this PC to the internet, then click Yes to retry.\n\nYes = Retry\nNo = Cancel restore",
+                "Network required",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (retry != MessageBoxResult.Yes)
+            {
+                return false;
+            }
+        }
+    }
+
+    private async void RetryNetworkCheckButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            RetryNetworkCheckButton.IsEnabled = false;
+            NetworkStatusDetailTextBlock.Text = "Checking network state...";
+            await RefreshNetworkStatusAsync(includeInternetProbe: true);
+        }
+        finally
+        {
+            UpdateRetryActionButtons();
         }
     }
 
@@ -559,6 +661,7 @@ public partial class MainWindow : Window
 
     private void SetBusyState(bool isBusy)
     {
+        _isBusy = isBusy;
         ScanButton.IsEnabled = !isBusy;
         SelectSupportedButton.IsEnabled = !isBusy;
         ClearSelectionButton.IsEnabled = !isBusy;
@@ -575,6 +678,7 @@ public partial class MainWindow : Window
         UseWingetCheckBox.IsEnabled = !isBusy;
         AppsDataGrid.IsEnabled = !isBusy;
         Mouse.OverrideCursor = isBusy ? Cursors.Wait : null;
+        UpdateRetryActionButtons();
     }
 
     private void HandleProgress(MigrationProgressInfo info)
@@ -685,10 +789,24 @@ public partial class MainWindow : Window
         LogTextBox.ScrollToEnd();
     }
 
-    private async Task RefreshNetworkStatusAsync()
+    private async Task RefreshNetworkStatusAsync(bool includeInternetProbe = false)
     {
-        var snapshot = await _connectivityService.GetStatusAsync();
+        var snapshot = await _connectivityService.GetStatusAsync(includeInternetProbe);
         UpdateNetworkStatusUi(snapshot);
+    }
+
+    private void UpdateRetryActionButtons()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            _ = Dispatcher.BeginInvoke(new Action(UpdateRetryActionButtons), DispatcherPriority.Background);
+            return;
+        }
+
+        RetryNetworkCheckButton.IsEnabled = !_isBusy;
+        RetryLastXmlRestoreButton.IsEnabled = !_isBusy
+            && !string.IsNullOrWhiteSpace(_lastPackageRestoreXmlPath)
+            && File.Exists(_lastPackageRestoreXmlPath);
     }
 
     private void UpdateNetworkStatusUi(ConnectivitySnapshot snapshot)
@@ -699,7 +817,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var isConnected = snapshot.HasInternetAccess || snapshot.IsNetworkAvailable;
+        var isConnected = snapshot.IsNetworkAvailable;
         var badgeColor = (Color)ColorConverter.ConvertFromString(isConnected ? "#DCF6E7" : "#FDE7E9");
         var iconColor = (Color)ColorConverter.ConvertFromString(isConnected ? "#0E6A45" : "#B42318");
 
