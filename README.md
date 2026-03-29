@@ -71,6 +71,7 @@ Some software types are more complex and may require extra care, manual reinstal
 - Store-packaged apps with special dependencies
 - Apps with services, drivers, or protected components
 
+
 ## Recommended Usage
 
 For best results:
@@ -81,33 +82,6 @@ For best results:
 4. Verify restored data before deleting your previous backup.
 5. Use the generated logs and verification report after each run.
 
-## Verification and Safety
-
-The application includes backup and restore logging and verification features to help users review what happened during the process.
-
-Users should still manually confirm that:
-
-- The restored app launches correctly
-- Important data is present
-- Profiles and settings are intact
-- No critical files are missing
-- Sign-in and sync state behave as expected
-
-## Project State
-
-Win Apps Migrator is under active beta development with ongoing work across:
-
-- UI refinement
-- App rule coverage
-- Restore reliability
-- WinGet / Chocolatey reinstall handling
-- XML app-list export and package-restore workflows
-- Verification improvements
-- Theme and workflow polish
-
-## Author
-
-**Author:** Ox1d3x3
 
 ## Releases
 
